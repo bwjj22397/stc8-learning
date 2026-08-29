@@ -1,0 +1,8 @@
+".\Objects\main.obj",
+".\Objects\GPIO.obj",
+".\Objects\NVIC.obj",
+".\Objects\Timer.obj",
+".\Objects\Timer_Isr.obj" 
+TO ".\Objects\project" 
+PRINT(".\Listings\project.m51") RAMSIZE(256) 
+DISABLEWARNING (16) 

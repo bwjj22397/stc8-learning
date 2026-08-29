@@ -1,0 +1,183 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              08/24/2026 23:03:57 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Develop\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listi
+                    -ngs\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "Config.h"
+   2          #include "GPIO.h"
+   3          #include "NVIC.h"
+   4          #include "UART.h"
+   5          #include "Switch.h"
+   6          #include "Timer.h"
+   7          #include "STC8H_PWM.h"
+   8          #include "Delay.h"
+   9          
+  10          #define BUZZER_GPIO     P00
+  11          
+  12          void GPIO_config(void) {
+  13   1          GPIO_InitTypeDef    GPIO_InitStructure;     //结构定义
+  14   1          GPIO_InitStructure.Pin  = GPIO_Pin_0;       //指定要初始化的IO,
+  15   1          GPIO_InitStructure.Mode = GPIO_OUT_PP;  //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GP
+             -IO_OUT_PP
+  16   1          GPIO_Inilize(GPIO_P0, &GPIO_InitStructure);//初始化
+  17   1      
+  18   1          GPIO_InitStructure.Pin  = GPIO_Pin_0 | GPIO_Pin_1;
+  19   1          GPIO_InitStructure.Mode = GPIO_PullUp;
+  20   1          GPIO_Inilize(GPIO_P3, &GPIO_InitStructure);
+  21   1      
+  22   1          GPIO_InitStructure.Pin  = GPIO_Pin_1;
+  23   1          GPIO_InitStructure.Mode = GPIO_PullUp;
+  24   1          GPIO_Inilize(GPIO_P5, &GPIO_InitStructure);
+  25   1      
+  26   1      }
+  27          
+  28          void UART_config(void) {
+  29   1          // >>> 记得添加 NVIC.c, UART.c, UART_Isr.c <<<
+  30   1          COMx_InitDefine     COMx_InitStructure;                 //结构定义
+  31   1          COMx_InitStructure.UART_Mode      = UART_8bit_BRTx; //模式, UART_ShiftRight,UART_8bit_BRTx,UART_9bit,U
+             -ART_9bit_BRTx
+  32   1          COMx_InitStructure.UART_BRT_Use   = BRT_Timer1;         //选择波特率发生器, BRT_Timer1, BRT_Timer2 (注
+             -意: 串口2固定使用BRT_Timer2)
+  33   1          COMx_InitStructure.UART_BaudRate  = 115200ul;           //波特率, 一般 110 ~ 115200
+  34   1          COMx_InitStructure.UART_RxEnable  = ENABLE;             //接收允许,   ENABLE或DISABLE
+  35   1          COMx_InitStructure.BaudRateDouble = DISABLE;            //波特率加倍, ENABLE或DISABLE
+  36   1          UART_Configuration(UART1, &COMx_InitStructure);     //初始化串口1 UART1,UART2,UART3,UART4
+  37   1      
+  38   1          NVIC_UART1_Init(ENABLE, Priority_1);    //中断使能, ENABLE/DISABLE; 优先级(低到高) Priority_0,Priority
+             -_1,Priority_2,Priority_3
+  39   1          UART1_SW(UART1_SW_P30_P31);     // 引脚选择, UART1_SW_P30_P31,UART1_SW_P36_P37,UART1_SW_P16_P17,UART1_
+             -SW_P43_P44
+  40   1      }
+  41          
+  42          u16 hz[] = {33, 37, 41, 44, 49, 55, 62, 65};
+  43          
+  44          // 哆啦A梦 - 主歌 + 高潮乐段（完整版）
+  45          u16 code notes[] = {
+  46              // 主歌 A
+  47              392, 523, 523, 659, 880, 659, 784, 784, 880, 784, 659, 698, 659, 587,
+  48              // 主歌 B-开放
+  49              440, 587, 587, 698, 988, 988, 880, 784, 698, 698, 659, 880, 988, 523, 587,
+C51 COMPILER V9.60.7.0   MAIN                                                              08/24/2026 23:03:57 PAGE 2   
+
+  50              // 主歌 A'
+  51              392, 523, 523, 659, 880, 659, 784, 784, 880, 784, 659, 698, 659, 587,
+  52              // 主歌 B-收束
+  53              440, 587, 587, 698, 988, 988, 880, 784, 698, 698, 659, 988, 587, 523,
+  54              // ---- 高潮乐段(ANANAN) ----
+  55              880, 880, 784, 698, 784, 880, 784, 587, 659, 698, 587, 784,
+  56              880, 784, 587, 659, 698, 587, 784,
+  57              880, 784, 698, 587, 587, 988, 880, 784, 880, 784,
+  58              784, 880, 659, 587, 523,
+  59              880, 784, 698, 587, 587, 988, 880, 784, 880, 784,
+  60              784, 880, 659, 587, 523,
+  61              523, 587, 659, 698, 659, 698, 659, 587,
+  62              659, 587, 659, 587, 523,
+  63              880, 880, 494, 523, 587, 440, 440, 494, 523, 587, 523
+  64          };
+  65          
+  66          u8 code durations[] = {
+  67              // 主歌 A
+  68              3, 1, 3, 1, 3, 1, 4, 3, 1, 3, 1, 3, 1, 4,
+  69              // 主歌 B-开放
+  70              3, 1, 3, 1, 3, 1, 3, 1, 2, 2, 3, 1, 2, 4, 2,
+  71              // 主歌 A'
+  72              3, 1, 3, 1, 3, 1, 4, 3, 1, 3, 1, 3, 1, 4,
+  73              // 主歌 B-收束
+  74              3, 1, 3, 1, 3, 1, 3, 1, 2, 2, 3, 1, 4, 4,
+  75              // ---- 高潮乐段 ----
+  76              2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 3,
+  77              2, 1, 1, 1, 1, 1, 3,
+  78              2, 1, 1, 1, 1, 1, 1, 1, 1, 3,
+  79              1, 1, 1, 1, 3,
+  80              2, 1, 1, 1, 1, 1, 1, 1, 1, 3,
+  81              1, 1, 1, 1, 3,
+  82              1, 1, 1, 1, 1, 1, 1, 3,
+  83              1, 1, 1, 1, 3,
+  84              2, 2, 2, 1, 1, 2, 2, 2, 1, 1, 4
+  85          };
+  86          
+  87          void Timer_config(u16 hz_Output) {
+  88   1          TIM_InitTypeDef     TIM_InitStructure;                      //结构定义
+  89   1          //定时器0做16位自动重装, 中断频率为1000HZ
+  90   1          TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;  //指定工作模式,   TIM_16BitAutoReload,TIM_16Bi
+             -t,TIM_8BitAutoReload,TIM_16BitAutoReloadNoMask
+  91   1          TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_1T;     //指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_C
+             -LOCK_Ext
+  92   1          TIM_InitStructure.TIM_ClkOut    = DISABLE;              //是否输出高速脉冲, ENABLE或DISABLE
+  93   1          TIM_InitStructure.TIM_Value     = 65536UL - (MAIN_Fosc / hz_Output / 2);        //初值,
+  94   1          TIM_InitStructure.TIM_Run       = ENABLE;               //是否初始化后启动定时器, ENABLE或DISABLE
+  95   1          Timer_Inilize(Timer0, &TIM_InitStructure);              //初始化Timer0    Timer0,Timer1,Timer2,Timer3,
+             -Timer4
+  96   1          NVIC_Timer0_Init(ENABLE, Priority_0);       //中断使能, ENABLE/DISABLE; 优先级(低到高) Priority_0,Prio
+             -rity_1,Priority_2,Priority_3
+  97   1      }
+  98          
+  99          
+ 100          
+ 101          void Call_Back_Buzzer(void) {
+ 102   1      //    static cnt = 0;
+ 103   1      //    
+ 104   1      //    
+ 105   1      //    BUZZER_GPIO = 0;
+ 106   1      
+ 107   1      //    if (cnt == 1) {
+C51 COMPILER V9.60.7.0   MAIN                                                              08/24/2026 23:03:57 PAGE 3   
+
+ 108   1      //        BUZZER_GPIO = 1;
+ 109   1      //        cnt = 0;
+ 110   1      //    }
+ 111   1      
+ 112   1      //    cnt++;
+ 113   1          
+ 114   1          BUZZER_GPIO = !BUZZER_GPIO;
+ 115   1      }
+ 116          
+ 117          int main(void) {
+ 118   1          u8 HzIdx = 0;
+ 119   1          u8 len = sizeof(notes) / sizeof(notes[0]);
+ 120   1      
+ 121   1          EAXSFR();
+ 122   1      
+ 123   1          GPIO_config();
+ 124   1          UART_config();
+ 125   1      
+ 126   1          EA = 1;
+ 127   1      
+ 128   1      
+ 129   1          while (1) {
+ 130   2              if (P51 == 0) {
+ 131   3      
+ 132   3                  Timer_config(hz[HzIdx]);
+ 133   3      
+ 134   3                  printf("hz : %d\n", hz[HzIdx]);
+ 135   3      
+ 136   3      //            delay_X_ms(durations[HzIdx] * 100);
+ 137   3      
+ 138   3                  if (++HzIdx >= len)  HzIdx = 0;
+ 139   3                  
+ 140   3                  delay_ms(100);
+ 141   3      
+ 142   3              } else if (P51 == 1) {
+ 143   3                  BUZZER_GPIO = 0;
+ 144   3              }
+ 145   2          }
+ 146   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    244    ----
+   CONSTANT SIZE    =    399    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     16      20
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

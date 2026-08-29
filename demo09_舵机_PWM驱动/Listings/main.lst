@@ -1,0 +1,147 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              08/22/2026 20:28:59 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Develop\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listi
+                    -ngs\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "Config.h"
+   2          #include "Delay.h"
+   3          #include "UART.h"
+   4          #include "GPIO.h"
+   5          #include "STC8H_PWM.h"
+   6          #include "NVIC.h"
+   7          #include "Switch.h"
+   8          
+   9          void GPIO_config(void) {
+  10   1          GPIO_InitTypeDef    GPIO_InitStructure;     //结构定义
+  11   1          GPIO_InitStructure.Pin  = GPIO_Pin_2;       //指定要初始化的IO,
+  12   1          GPIO_InitStructure.Mode = GPIO_OUT_PP;  //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GP
+             -IO_OUT_PP
+  13   1          GPIO_Inilize(GPIO_P0, &GPIO_InitStructure);//初始化
+  14   1      }
+  15          
+  16          void UART_config(void) {
+  17   1          // >>> 记得添加 NVIC.c, UART.c, UART_Isr.c <<<
+  18   1          COMx_InitDefine     COMx_InitStructure;                 //结构定义
+  19   1          COMx_InitStructure.UART_Mode      = UART_8bit_BRTx; //模式, UART_ShiftRight,UART_8bit_BRTx,UART_9bit,U
+             -ART_9bit_BRTx
+  20   1          COMx_InitStructure.UART_BRT_Use   = BRT_Timer1;         //选择波特率发生器, BRT_Timer1, BRT_Timer2 (注
+             -意: 串口2固定使用BRT_Timer2)
+  21   1          COMx_InitStructure.UART_BaudRate  = 115200ul;           //波特率, 一般 110 ~ 115200
+  22   1          COMx_InitStructure.UART_RxEnable  = ENABLE;             //接收允许,   ENABLE或DISABLE
+  23   1          COMx_InitStructure.BaudRateDouble = DISABLE;            //波特率加倍, ENABLE或DISABLE
+  24   1          UART_Configuration(UART1, &COMx_InitStructure);     //初始化串口1 UART1,UART2,UART3,UART4
+  25   1      
+  26   1          NVIC_UART1_Init(ENABLE, Priority_1);    //中断使能, ENABLE/DISABLE; 优先级(低到高) Priority_0,Priority
+             -_1,Priority_2,Priority_3
+  27   1          UART1_SW(UART1_SW_P30_P31);     // 引脚选择, UART1_SW_P30_P31,UART1_SW_P36_P37,UART1_SW_P16_P17,UART1_
+             -SW_P43_P44
+  28   1      }
+  29          
+  30          #define PRESCALER   10
+  31          
+  32          #define FREQ        50
+  33          
+  34          #define PERIOD  (MAIN_Fosc / PRESCALER / FREQ)
+  35          
+  36          PWMx_Duty   dutyB;
+  37          
+  38          void    PWM_config(void) {
+  39   1          PWMx_InitDefine     PWMx_InitStructure;
+  40   1      
+  41   1          // 配置PWM7
+  42   1          PWMx_InitStructure.PWM_Mode         = CCMRn_PWM_MODE1;  //模式,     CCMRn_FREEZE,CCMRn_MATCH_VALID,CCM
+             -Rn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
+  43   1          PWMx_InitStructure.PWM_Duty         = dutyB.PWM7_Duty;  //PWM占空比时间, 0~Period
+  44   1          PWMx_InitStructure.PWM_EnoSelect    = ENO7P;            //输出通道选择, ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,
+             -ENO3N,ENO4P,ENO4N / ENO5P,ENO6P,ENO7P,ENO8P
+  45   1          PWM_Configuration(PWM7, &PWMx_InitStructure);           //初始化PWM,  PWMA,PWMB
+  46   1      
+  47   1          // 配置PWMB
+C51 COMPILER V9.60.7.0   MAIN                                                              08/22/2026 20:28:59 PAGE 2   
+
+  48   1          PWMx_InitStructure.PWM_Period        = PERIOD - 1;          //周期时间,   0~65535
+  49   1          PWMx_InitStructure.PWM_DeadTime      = 0;                   //死区发生器设置, 0~255
+  50   1          PWMx_InitStructure.PWM_MainOutEnable = ENABLE;          //主输出使能, ENABLE,DISABLE
+  51   1          PWMx_InitStructure.PWM_CEN_Enable    = ENABLE;          //使能计数器, ENABLE,DISABLE
+  52   1          PWM_Configuration(PWMB, &PWMx_InitStructure);           //初始化PWM通用寄存器,  PWMA,PWMB
+  53   1      
+  54   1          // 配置预分频系数
+  55   1          PWMB_Prescaler(PRESCALER - 1); // 配置预分频系数
+  56   1      
+  57   1          // 切换PWM通道
+  58   1          PWM7_SW(PWM7_SW_P02);                   //PWM7_SW_P22,PWM7_SW_P33,PWM7_SW_P02,PWM7_SW_P76
+  59   1      
+  60   1          // 初始化PWMB的中断
+  61   1          NVIC_PWM_Init(PWMB, DISABLE, Priority_0);
+  62   1      }
+  63          
+  64          void Serve_set_angle(float angle) {
+  65   1          u16 duty = 2000 * angle / 180 + 500;
+  66   1      
+  67   1          dutyB.PWM7_Duty = PERIOD * duty / 20000;
+  68   1          UpdatePwm(PWM7, &dutyB);
+  69   1      }
+  70          
+  71          
+  72          int percent = 0;
+  73          
+  74          void on_uart1_receive(void) {
+  75   1          int direction = 0;
+  76   1      
+  77   1          if (COM1.RX_TimeOut > 0) {
+  78   2      
+  79   2              if (--COM1.RX_TimeOut == 0) {
+  80   3      
+  81   3                  if (COM1.RX_Cnt > 0) {
+  82   4                      if (0x00 == RX1_Buffer[0])  direction = -10;
+  83   4                      else if (0x01 == RX1_Buffer[0])  direction = 10;
+  84   4      
+  85   4                      percent += direction;
+  86   4                      if (percent >= 180)  percent = 180;
+  87   4                      else if (percent <= 0)  percent = 0;
+  88   4      
+  89   4                      Serve_set_angle(percent);
+  90   4                  }
+  91   3                  COM1.RX_Cnt = 0;
+  92   3              }
+  93   2          }
+  94   1      }
+  95          
+  96          int main(void) {
+  97   1      
+  98   1          EAXSFR();
+  99   1      
+ 100   1          GPIO_config();
+ 101   1          UART_config();
+ 102   1          PWM_config();
+ 103   1      
+ 104   1          EA = 1;
+ 105   1      
+ 106   1          while (1) {
+ 107   2              on_uart1_receive();
+ 108   2      
+ 109   2              delay_ms(20);
+C51 COMPILER V9.60.7.0   MAIN                                                              08/22/2026 20:28:59 PAGE 3   
+
+ 110   2          }
+ 111   1      
+ 112   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    354    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     18      24
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

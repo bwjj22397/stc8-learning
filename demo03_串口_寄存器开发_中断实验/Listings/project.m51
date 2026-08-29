@@ -1,0 +1,160 @@
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                    08/18/2026  11:54:07  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22.4.0, INVOKED BY:
+D:\DEVELOP\KEIL_V5\C51\BIN\BL51.EXE .\Objects\main.obj TO .\Objects\project PRINT (.\Listings\project.m51) RAMSIZE (256)
+>> 
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  .\Objects\main.obj (MAIN)
+  D:\DEVELOP\KEIL_V5\C51\LIB\C51S.LIB (?C_STARTUP)
+
+
+LINK MAP OF MODULE:  .\Objects\project (MAIN)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            IDATA   0008H     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     0010H     UNIT         ?PR?DELAY1000MS?MAIN
+            CODE    0013H     000FH     UNIT         ?PR?UART1_ISR?MAIN
+                    0022H     0001H                  *** GAP ***
+            CODE    0023H     0003H     ABSOLUTE     
+            CODE    0026H     003CH     UNIT         ?PR?MAIN?MAIN
+            CODE    0062H     000CH     UNIT         ?C_C51STARTUP
+
+
+
+OVERLAY MAP OF MODULE:   .\Objects\project (MAIN)
+
+
+SEGMENT
+  +--> CALLED SEGMENT
+---------------------
+?C_C51STARTUP
+  +--> ?PR?MAIN?MAIN
+
+?PR?MAIN?MAIN
+  +--> ?PR?DELAY1000MS?MAIN
+
+
+
+SYMBOL TABLE OF MODULE:  .\Objects\project (MAIN)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        MAIN
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  C:0013H         PUBLIC        UART1_Isr
+  D:0092H         PUBLIC        P1M0
+  D:0093H         PUBLIC        P0M1
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  08/18/2026  11:54:07  PAGE 2
+
+
+  D:0096H         PUBLIC        P2M0
+  D:0091H         PUBLIC        P1M1
+  D:00B2H         PUBLIC        P3M0
+  D:0095H         PUBLIC        P2M1
+  D:0090H         PUBLIC        P1
+  D:00B4H         PUBLIC        P4M0
+  D:00B1H         PUBLIC        P3M1
+  D:00CAH         PUBLIC        P5M0
+  D:00B3H         PUBLIC        P4M1
+  D:00C9H         PUBLIC        P5M1
+  D:00C8H         PUBLIC        P5
+  B:00A8H.7       PUBLIC        EA
+  C:0006H         PUBLIC        Delay1000ms
+  B:00A8H.4       PUBLIC        ES
+  B:0098H.0       PUBLIC        RI
+  B:0098H.1       PUBLIC        TI
+  C:0026H         PUBLIC        main
+  D:0099H         PUBLIC        SBUF
+  D:0098H         PUBLIC        SCON
+  B:00C8H.3       PUBLIC        P53
+  D:008EH         PUBLIC        AUXR
+  D:00D6H         PUBLIC        T2H
+  D:00D7H         PUBLIC        T2L
+  D:0094H         PUBLIC        P0M0
+  -------         PROC          UART1_ISR
+  C:0013H         LINE#         28
+  C:0013H         LINE#         30
+  C:0016H         LINE#         31
+  C:0016H         LINE#         32
+  C:0018H         LINE#         33
+  C:001AH         LINE#         34
+  C:001AH         LINE#         36
+  C:001DH         LINE#         37
+  C:001DH         LINE#         38
+  C:001FH         LINE#         39
+  C:0021H         LINE#         40
+  C:0021H         LINE#         41
+  -------         ENDPROC       UART1_ISR
+  -------         PROC          L?0016
+  -------         ENDPROC       L?0016
+  -------         PROC          DELAY1000MS
+  -------         DO            
+  D:0007H         SYMBOL        i
+  D:0006H         SYMBOL        j
+  D:0005H         SYMBOL        k
+  -------         ENDDO         
+  C:0006H         LINE#         43
+  C:0006H         LINE#         44
+  C:0006H         LINE#         47
+  C:0008H         LINE#         48
+  C:000AH         LINE#         49
+  C:000CH         LINE#         51
+  C:000CH         LINE#         53
+  C:000CH         LINE#         54
+  C:000EH         LINE#         55
+  C:0010H         LINE#         56
+  C:0012H         LINE#         57
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  08/18/2026  11:54:07  PAGE 3
+
+
+  -------         ENDPROC       DELAY1000MS
+  -------         PROC          MAIN
+  C:0026H         LINE#         60
+  C:0026H         LINE#         61
+  C:0026H         LINE#         62
+  C:0029H         LINE#         63
+  C:002CH         LINE#         66
+  C:002FH         LINE#         67
+  C:0031H         LINE#         68
+  C:0033H         LINE#         69
+  C:0035H         LINE#         70
+  C:0037H         LINE#         71
+  C:0039H         LINE#         72
+  C:003BH         LINE#         73
+  C:003DH         LINE#         74
+  C:003FH         LINE#         75
+  C:0041H         LINE#         78
+  C:0044H         LINE#         79
+  C:0047H         LINE#         80
+  C:004AH         LINE#         81
+  C:004DH         LINE#         82
+  C:004FH         LINE#         83
+  C:0051H         LINE#         84
+  C:0054H         LINE#         86
+  C:0054H         LINE#         88
+  C:0057H         LINE#         89
+  C:0057H         LINE#         90
+  C:005AH         LINE#         91
+  C:005AH         LINE#         92
+  C:005DH         LINE#         93
+  C:0060H         LINE#         94
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        MAIN
+
+Program Size: data=9.0 xdata=0 code=109
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

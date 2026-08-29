@@ -1,0 +1,19 @@
+".\Objects\main.obj",
+".\Objects\ADC.obj",
+".\Objects\ADC_Isr.obj",
+".\Objects\Delay.obj",
+".\Objects\GPIO.obj",
+".\Objects\I2C.obj",
+".\Objects\I2C_Isr.obj",
+".\Objects\NVIC.obj",
+".\Objects\STC8H_PWM.obj",
+".\Objects\STC8H_PWM_Isr.obj",
+".\Objects\Timer.obj",
+".\Objects\Timer_Isr.obj",
+".\Objects\UART.obj",
+".\Objects\UART_Isr.obj",
+".\Objects\Exti.obj",
+".\Objects\Exti_Isr.obj" 
+TO ".\Objects\project" 
+PRINT(".\Listings\project.m51") RAMSIZE(256) 
+DISABLEWARNING (16) 

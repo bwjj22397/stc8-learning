@@ -1,0 +1,119 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:52:03 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Develop\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listi
+                    -ngs\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "Config.h"
+   2          #include "GPIO.h"
+   3          #include "NVIC.h"
+   4          #include "UART.h"
+   5          #include "Switch.h"
+   6          #include "ADC.h"
+   7          #include "Timer.h"
+   8          #include "STC8H_PWM.h"
+   9          #include "Delay.h"
+  10          
+  11          #define MOTOR P01
+  12          
+  13          #define PREQ            1000
+  14          
+  15          #define PERIOD (MAIN_Fosc / PREQ)
+  16          
+  17          void GPIO_config(void) {
+  18   1          GPIO_InitTypeDef    GPIO_InitStructure;     //结构定义
+  19   1          GPIO_InitStructure.Pin  = GPIO_Pin_1;       //指定要初始化的IO,
+  20   1          GPIO_InitStructure.Mode = GPIO_OUT_PP;  //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GP
+             -IO_OUT_PP
+  21   1          GPIO_Inilize(GPIO_P0, &GPIO_InitStructure);//初始化
+  22   1      
+  23   1          GPIO_InitStructure.Pin  = GPIO_Pin_1;       //指定要初始化的IO,
+  24   1          GPIO_InitStructure.Mode = GPIO_OUT_PP;  //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GP
+             -IO_OUT_PP
+  25   1          GPIO_Inilize(GPIO_P5, &GPIO_InitStructure);//初始化
+  26   1      }
+  27          
+  28          void UART_config(void) {
+  29   1          COMx_InitDefine     COMx_InitStructure;
+  30   1          COMx_InitStructure.UART_Mode      = UART_8bit_BRTx;
+  31   1          COMx_InitStructure.UART_BRT_Use   = BRT_Timer1;
+  32   1          COMx_InitStructure.UART_BaudRate  = 115200ul;
+  33   1          COMx_InitStructure.UART_RxEnable  = ENABLE;
+  34   1          COMx_InitStructure.BaudRateDouble = DISABLE;
+  35   1          UART_Configuration(UART1, &COMx_InitStructure);
+  36   1      
+  37   1          NVIC_UART1_Init(ENABLE, Priority_1);
+  38   1          UART1_SW(UART1_SW_P30_P31);
+  39   1      }
+  40          
+  41          void    PWM_config(void) {
+  42   1          PWMx_InitDefine     PWMx_InitStructure;
+  43   1      
+  44   1          PWMx_InitStructure.PWM_Mode         =   CCMRn_PWM_MODE1;    //模式,     CCMRn_FREEZE,CCMRn_MATCH_VALID
+             -,CCMRn_MATCH_INVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
+  45   1          PWMx_InitStructure.PWM_Duty         =   PERIOD; //PWM占空比时间, 0~Period
+  46   1          PWMx_InitStructure.PWM_EnoSelect  = ENO6P;              //输出通道选择, ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,
+             -ENO3N,ENO4P,ENO4N / ENO5P,ENO6P,ENO7P,ENO8P
+  47   1          PWM_Configuration(PWM6, &PWMx_InitStructure);           //初始化PWM,  PWMA,PWMB
+  48   1      
+  49   1          PWMx_InitStructure.PWM_Period   = PERIOD - 1;                   //周期时间,   0~65535
+  50   1          PWMx_InitStructure.PWM_DeadTime = 0;                    //死区发生器设置, 0~255
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:52:03 PAGE 2   
+
+  51   1          PWMx_InitStructure.PWM_MainOutEnable = ENABLE;          //主输出使能, ENABLE,DISABLE
+  52   1          PWMx_InitStructure.PWM_CEN_Enable   = ENABLE;           //使能计数器, ENABLE,DISABLE
+  53   1          PWM_Configuration(PWMB, &PWMx_InitStructure);           //初始化PWM通用寄存器,  PWMA,PWMB
+  54   1      
+  55   1          PWM6_SW(PWM6_SW_P01);                   //PWM6_SW_P21,PWM6_SW_P54,PWM6_SW_P01,PWM6_SW_P75
+  56   1      
+  57   1          NVIC_PWM_Init(PWMB, DISABLE, Priority_0);
+  58   1      }
+  59          
+  60          void main() {
+  61   1          int i = 0, dir = -1;
+  62   1          PWMx_Duty duty;
+  63   1          u8 duty_percent = 100;
+  64   1      
+  65   1          EAXSFR();
+  66   1      
+  67   1          GPIO_config();
+  68   1          PWM_config();
+  69   1      
+  70   1      
+  71   1          // 0 - 100
+  72   1          duty.PWM6_Duty = PERIOD * duty_percent / 100;
+  73   1          UpdatePwm(PWM6, &duty);
+  74   1          delay_X_ms(2000);
+  75   1      
+  76   1          while (duty_percent > 20) {
+  77   2              duty_percent += dir;
+  78   2              duty.PWM6_Duty = PERIOD * duty_percent / 100;
+  79   2              UpdatePwm(PWM6, &duty);
+  80   2              delay_ms(7);
+  81   2          }
+  82   1          delay_X_ms(1000);
+  83   1          
+  84   1          PWMB_CC6E_Disable();
+  85   1      
+  86   1          while (1) {
+  87   2      
+  88   2          }
+  89   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    287    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      41
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

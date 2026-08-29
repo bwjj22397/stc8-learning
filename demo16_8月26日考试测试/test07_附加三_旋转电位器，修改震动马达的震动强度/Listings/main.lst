@@ -1,0 +1,149 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:59:30 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Develop\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listi
+                    -ngs\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "Config.h"
+   2          #include "NVIC.h"
+   3          #include "GPIO.h"
+   4          #include "UART.h"
+   5          #include "Switch.h"
+   6          #include "Delay.h"
+   7          #include "ADC.h"
+   8          #include "STC8H_PWM.h"
+   9          
+  10          #define MOTOR P01
+  11          
+  12          #define PREQ                    1000
+  13          
+  14          #define PERIOD (MAIN_Fosc / PREQ)
+  15          
+  16          void GPIO_config(void) {
+  17   1          GPIO_InitTypeDef    GPIO_InitStructure;     //Ω·ππ∂®“Â
+  18   1          GPIO_InitStructure.Pin  = GPIO_Pin_5;       //÷∏∂®“™≥ı ºªØµƒIO,
+  19   1          GPIO_InitStructure.Mode = GPIO_HighZ;   //÷∏∂®IOµƒ ‰»ÎªÚ ‰≥ˆ∑Ω Ω,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GP
+             -IO_OUT_PP
+  20   1          GPIO_Inilize(GPIO_P0, &GPIO_InitStructure);//≥ı ºªØ
+  21   1      
+  22   1          GPIO_InitStructure.Pin  = GPIO_Pin_0 | GPIO_Pin_1;
+  23   1          GPIO_InitStructure.Mode = GPIO_PullUp;
+  24   1          GPIO_Inilize(GPIO_P3, &GPIO_InitStructure);
+  25   1          
+  26   1              GPIO_InitStructure.Pin  = GPIO_Pin_1;           //÷∏∂®“™≥ı ºªØµƒIO,
+  27   1              GPIO_InitStructure.Mode = GPIO_OUT_PP;  //÷∏∂®IOµƒ ‰»ÎªÚ ‰≥ˆ∑Ω Ω,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GPIO_O
+             -UT_PP
+  28   1              GPIO_Inilize(GPIO_P0, &GPIO_InitStructure);//≥ı ºªØ
+  29   1      }
+  30          
+  31          void UART_config(void) {
+  32   1          // >>> º«µ√ÃÌº” NVIC.c, UART.c, UART_Isr.c <<<
+  33   1          COMx_InitDefine     COMx_InitStructure;                 //Ω·ππ∂®“Â
+  34   1          COMx_InitStructure.UART_Mode      = UART_8bit_BRTx; //ƒ£ Ω, UART_ShiftRight,UART_8bit_BRTx,UART_9bit,U
+             -ART_9bit_BRTx
+  35   1          COMx_InitStructure.UART_BRT_Use   = BRT_Timer1;         //—°‘Ò≤®Ãÿ¬ ∑¢…˙∆˜, BRT_Timer1, BRT_Timer2 (◊¢
+             -“‚: ¥Æø⁄2πÃ∂® π”√BRT_Timer2)
+  36   1          COMx_InitStructure.UART_BaudRate  = 115200ul;           //≤®Ãÿ¬ , “ª∞„ 110 ~ 115200
+  37   1          COMx_InitStructure.UART_RxEnable  = ENABLE;             //Ω” ’‘ –Ì,   ENABLEªÚDISABLE
+  38   1          COMx_InitStructure.BaudRateDouble = DISABLE;            //≤®Ãÿ¬ º”±∂, ENABLEªÚDISABLE
+  39   1          UART_Configuration(UART1, &COMx_InitStructure);     //≥ı ºªØ¥Æø⁄1 UART1,UART2,UART3,UART4
+  40   1      
+  41   1          NVIC_UART1_Init(ENABLE, Priority_1);    //÷–∂œ πƒ‹, ENABLE/DISABLE; ”≈œ»º∂(µÕµΩ∏ﬂ) Priority_0,Priority
+             -_1,Priority_2,Priority_3
+  42   1          UART1_SW(UART1_SW_P30_P31);     // “˝Ω≈—°‘Ò, UART1_SW_P30_P31,UART1_SW_P36_P37,UART1_SW_P16_P17,UART1_
+             -SW_P43_P44
+  43   1      }
+  44          
+  45          /******************* AD≈‰÷√∫Ø ˝ *******************/
+  46          void    ADC_config(void) {
+  47   1          ADC_InitTypeDef     ADC_InitStructure;      //Ω·ππ∂®“Â
+  48   1      
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:59:30 PAGE 2   
+
+  49   1          ADC_InitStructure.ADC_SMPduty   = 31;       //ADC ƒ£ƒ‚–≈∫≈≤…—˘ ±º‰øÿ÷∆, 0~31£®◊¢“‚£∫ SMPDUTY “ª∂®≤ªƒ‹…
+             -Ë÷√–°”⁄ 10£©
+  50   1          ADC_InitStructure.ADC_CsSetup   = 0;        //ADC Õ®µ¿—°‘Ò ±º‰øÿ÷∆ 0(ƒ¨»œ),1
+  51   1          ADC_InitStructure.ADC_CsHold    = 1;        //ADC Õ®µ¿—°‘Ò±£≥÷ ±º‰øÿ÷∆ 0,1(ƒ¨»œ),2,3
+  52   1          ADC_InitStructure.ADC_Speed     = ADC_SPEED_2X16T;       //…Ë÷√ ADC π§◊˜ ±÷”∆µ¬  ADC_SPEED_2X1T~ADC_SP
+             -EED_2X16T
+  53   1          ADC_InitStructure.ADC_AdjResult = ADC_RIGHT_JUSTIFIED;  //ADCΩ·π˚µ˜’˚,  ADC_LEFT_JUSTIFIED,ADC_RIGHT_J
+             -USTIFIED
+  54   1          ADC_Inilize(&ADC_InitStructure);        //≥ı ºªØ
+  55   1          ADC_PowerControl(ENABLE);               //ADCµÁ‘¥ø™πÿ, ENABLEªÚDISABLE
+  56   1          NVIC_ADC_Init(DISABLE, Priority_0);     //÷–∂œ πƒ‹, ENABLE/DISABLE; ”≈œ»º∂(µÕµΩ∏ﬂ) Priority_0,Priority
+             -_1,Priority_2,Priority_3
+  57   1      }
+  58          
+  59          void    PWM_config(void)
+  60          {
+  61   1              PWMx_InitDefine         PWMx_InitStructure;
+  62   1      
+  63   1              PWMx_InitStructure.PWM_Mode             =       CCMRn_PWM_MODE1;        //ƒ£ Ω,         CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_I
+             -NVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
+  64   1              PWMx_InitStructure.PWM_Duty             =  PERIOD;      //PWM’ºø’±» ±º‰, 0~Period
+  65   1              PWMx_InitStructure.PWM_EnoSelect  = ENO6P;                              // ‰≥ˆÕ®µ¿—°‘Ò, ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,E
+             -NO4N / ENO5P,ENO6P,ENO7P,ENO8P
+  66   1              PWM_Configuration(PWM6, &PWMx_InitStructure);                   //≥ı ºªØPWM,  PWMA,PWMB
+  67   1      
+  68   1              PWMx_InitStructure.PWM_Period   = PERIOD - 1;                                   //÷‹∆⁄ ±º‰,   0~65535
+  69   1              PWMx_InitStructure.PWM_DeadTime = 0;                                    //À¿«¯∑¢…˙∆˜…Ë÷√, 0~255
+  70   1              PWMx_InitStructure.PWM_MainOutEnable= ENABLE;                   //÷˜ ‰≥ˆ πƒ‹, ENABLE,DISABLE
+  71   1              PWMx_InitStructure.PWM_CEN_Enable   = ENABLE;                   // πƒ‹º∆ ˝∆˜, ENABLE,DISABLE
+  72   1              PWM_Configuration(PWMB, &PWMx_InitStructure);                   //≥ı ºªØPWMÕ®”√ºƒ¥Ê∆˜,  PWMA,PWMB
+  73   1      
+  74   1              PWM6_SW(PWM6_SW_P01);                                   //PWM6_SW_P21,PWM6_SW_P54,PWM6_SW_P01,PWM6_SW_P75
+  75   1      
+  76   1              NVIC_PWM_Init(PWMB,DISABLE,Priority_0);
+  77   1      }
+  78          
+  79          void main(void) {
+  80   1          u16 adc;          // µÁŒª∆˜ADC‘≠ º÷µ, ∑∂Œß0~4095
+  81   1          u16 duty_val;     // ’ºø’±»º∆ ˝÷µ, ∑∂Œß0~PERIOD
+  82   1          PWMx_Duty pwm_duty;
+  83   1      
+  84   1          EAXSFR();
+  85   1      
+  86   1          GPIO_config();
+  87   1          PWM_config();
+  88   1          UART_config();
+  89   1          ADC_config();
+  90   1      
+  91   1          EA = 1;
+  92   1      
+  93   1          pwm_duty.PWM6_Duty = 0;
+  94   1          UpdatePwm(PWM6, &pwm_duty);
+  95   1      
+  96   1          while (1) {
+  97   2              adc = Get_ADCResult(ADC_CH13);            // ∂¡P0.5…œµƒµÁŒª∆˜µÁ—π
+  98   2      
+  99   2              // 24000≥À4095‘º9828ÕÚ, ≥¨≥ˆ16Œª…œœﬁ, œ»∞¥32Œªº∆À„‘ŸΩÿªÿ16Œª
+ 100   2              duty_val = PERIOD * adc / 2740;
+ 101   2      
+ 102   2              pwm_duty.PWM6_Duty = duty_val;
+ 103   2              UpdatePwm(PWM6, &pwm_duty);
+ 104   2      
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:59:30 PAGE 3   
+
+ 105   2              printf("ADC: %u, duty: %u\r\n", adc, duty_val);   // u16’º¡Ω∏Ò, ’˝∫√≈‰%u
+ 106   2      
+ 107   2              delay_ms(50);
+ 108   2          }
+ 109   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    306    ----
+   CONSTANT SIZE    =     20    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      45
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

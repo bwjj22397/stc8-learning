@@ -1,0 +1,102 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:46:15 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Develop\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listi
+                    -ngs\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "Config.h"
+   2          #include "Delay.h"
+   3          #include "GPIO.h"
+   4          #include "STC8H_PWM.h"
+   5          #include "NVIC.h"
+   6          #include "Switch.h"
+   7          
+   8          #define MOTOR P01
+   9          
+  10          #define PREQ                    1000
+  11          
+  12          #define PERIOD (MAIN_Fosc / PREQ)
+  13          
+  14          void GPIO_config(void) {
+  15   1              GPIO_InitTypeDef        GPIO_InitStructure;             //结构定义
+  16   1              GPIO_InitStructure.Pin  = GPIO_Pin_1;           //指定要初始化的IO,
+  17   1              GPIO_InitStructure.Mode = GPIO_OUT_PP;  //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GPIO_O
+             -UT_PP
+  18   1              GPIO_Inilize(GPIO_P0, &GPIO_InitStructure);//初始化
+  19   1      }
+  20          void    PWM_config(void)
+  21          {
+  22   1              PWMx_InitDefine         PWMx_InitStructure;
+  23   1      
+  24   1              PWMx_InitStructure.PWM_Mode             =       CCMRn_PWM_MODE1;        //模式,         CCMRn_FREEZE,CCMRn_MATCH_VALID,CCMRn_MATCH_I
+             -NVALID,CCMRn_ROLLOVER,CCMRn_FORCE_INVALID,CCMRn_FORCE_VALID,CCMRn_PWM_MODE1,CCMRn_PWM_MODE2
+  25   1              PWMx_InitStructure.PWM_Duty             =  PERIOD;      //PWM占空比时间, 0~Period
+  26   1              PWMx_InitStructure.PWM_EnoSelect  = ENO6P;                              //输出通道选择, ENO1P,ENO1N,ENO2P,ENO2N,ENO3P,ENO3N,ENO4P,E
+             -NO4N / ENO5P,ENO6P,ENO7P,ENO8P
+  27   1              PWM_Configuration(PWM6, &PWMx_InitStructure);                   //初始化PWM,  PWMA,PWMB
+  28   1      
+  29   1              PWMx_InitStructure.PWM_Period   = PERIOD - 1;                                   //周期时间,   0~65535
+  30   1              PWMx_InitStructure.PWM_DeadTime = 0;                                    //死区发生器设置, 0~255
+  31   1              PWMx_InitStructure.PWM_MainOutEnable= ENABLE;                   //主输出使能, ENABLE,DISABLE
+  32   1              PWMx_InitStructure.PWM_CEN_Enable   = ENABLE;                   //使能计数器, ENABLE,DISABLE
+  33   1              PWM_Configuration(PWMB, &PWMx_InitStructure);                   //初始化PWM通用寄存器,  PWMA,PWMB
+  34   1      
+  35   1              PWM6_SW(PWM6_SW_P01);                                   //PWM6_SW_P21,PWM6_SW_P54,PWM6_SW_P01,PWM6_SW_P75
+  36   1      
+  37   1              NVIC_PWM_Init(PWMB,DISABLE,Priority_0);
+  38   1      }
+  39          
+  40          void main(){
+  41   1          int i = 0,dir = 1;
+  42   1          
+  43   1              PWMx_Duty duty;
+  44   1              u8 duty_percent = 0; // 0 - 100
+  45   1              
+  46   1              EAXSFR();
+  47   1              
+  48   1              GPIO_config();
+  49   1              PWM_config();
+  50   1              
+  51   1              duty.PWM6_Duty = 0;
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:46:15 PAGE 2   
+
+  52   1              UpdatePwm(PWM6, &duty);
+  53   1              while(1){
+  54   2                      delay_ms(10);
+  55   2                      
+  56   2                      // 设置占空比
+  57   2              duty_percent += dir;
+  58   2              
+  59   2              //低速转高速-》再转成低速
+  60   2      //        if(100 == duty_percent) dir = -1;
+  61   2      //        else if(0 == duty_percent) dir = 1;
+  62   2              //高速转低速
+  63   2              if(duty_percent > 0) dir = -1;
+  64   2              else if(0 == duty_percent) duty_percent = 100;
+  65   2              
+  66   2              
+  67   2                      duty.PWM6_Duty = PERIOD * duty_percent / 100;
+  68   2                      UpdatePwm(PWM6, &duty);
+  69   2              
+  70   2              delay_ms(20);
+  71   2              
+  72   2              }
+  73   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    195    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      32
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

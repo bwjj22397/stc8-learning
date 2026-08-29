@@ -1,0 +1,337 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:49:11 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Develop\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listi
+                    -ngs\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "Config.h"
+   2          #include "GPIO.h"
+   3          #include "NVIC.h"
+   4          #include "UART.h"
+   5          #include "Switch.h"
+   6          #include "ADC.h"
+   7          #include "Timer.h"
+   8          #include "STC8H_PWM.h"
+   9          #include "Delay.h"
+  10          
+  11          
+  12          void GPIO_config(void) {
+  13   1          GPIO_InitTypeDef    GPIO_InitStructure;
+  14   1          GPIO_InitStructure.Pin  = GPIO_Pin_4;               //Ö¸¶¨Òª³õÊ¼»¯µÄIO,
+  15   1          GPIO_InitStructure.Mode = GPIO_HighZ;           //Ö¸¶¨IOµÄÊäÈë»òÊä³ö·½Ê½,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,
+             -GPIO_OUT_PP
+  16   1          GPIO_Inilize(GPIO_P0, &GPIO_InitStructure);//³õÊ¼»¯
+  17   1          
+  18   1          GPIO_InitStructure.Pin  = GPIO_Pin_0 | GPIO_Pin_1;          //Ö¸¶¨Òª³õÊ¼»¯µÄIO,
+  19   1          GPIO_InitStructure.Mode = GPIO_PullUp;          //Ö¸¶¨IOµÄÊäÈë»òÊä³ö·½Ê½,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD
+             -,GPIO_OUT_PP
+  20   1          GPIO_Inilize(GPIO_P3, &GPIO_InitStructure);//³õÊ¼»¯
+  21   1      }
+  22          
+  23          void UART_config(void) {
+  24   1          // >>> ¼ÇµÃÌí¼Ó NVIC.c, UART.c, UART_Isr.c <<<
+  25   1          COMx_InitDefine     COMx_InitStructure;                 //½á¹¹¶¨Òå
+  26   1          COMx_InitStructure.UART_Mode      = UART_8bit_BRTx; //Ä£Ê½, UART_ShiftRight,UART_8bit_BRTx,UART_9bit,U
+             -ART_9bit_BRTx
+  27   1          COMx_InitStructure.UART_BRT_Use   = BRT_Timer1;         //Ñ¡Ôñ²¨ÌØÂÊ·¢ÉúÆ÷, BRT_Timer1, BRT_Timer2 (×¢
+             -Òâ: ´®¿Ú2¹Ì¶¨Ê¹ÓÃBRT_Timer2)
+  28   1          COMx_InitStructure.UART_BaudRate  = 115200ul;           //²¨ÌØÂÊ, Ò»°ã 110 ~ 115200
+  29   1          COMx_InitStructure.UART_RxEnable  = ENABLE;             //½ÓÊÕÔÊÐí,   ENABLE»òDISABLE
+  30   1          COMx_InitStructure.BaudRateDouble = DISABLE;            //²¨ÌØÂÊ¼Ó±¶, ENABLE»òDISABLE
+  31   1          UART_Configuration(UART1, &COMx_InitStructure);     //³õÊ¼»¯´®¿Ú1 UART1,UART2,UART3,UART4
+  32   1      
+  33   1          NVIC_UART1_Init(ENABLE, Priority_1);    //ÖÐ¶ÏÊ¹ÄÜ, ENABLE/DISABLE; ÓÅÏÈ¼¶(µÍµ½¸ß) Priority_0,Priority
+             -_1,Priority_2,Priority_3
+  34   1          UART1_SW(UART1_SW_P30_P31);     // Òý½ÅÑ¡Ôñ, UART1_SW_P30_P31,UART1_SW_P36_P37,UART1_SW_P16_P17,UART1_
+             -SW_P43_P44
+  35   1      }
+  36          
+  37          /******************* ADÅäÖÃº¯Êý *******************/
+  38          void    ADC_config(void) {
+  39   1          ADC_InitTypeDef     ADC_InitStructure;      //½á¹¹¶¨Òå
+  40   1      
+  41   1          ADC_InitStructure.ADC_SMPduty   = 31;       //ADC Ä£ÄâÐÅºÅ²ÉÑùÊ±¼ä¿ØÖÆ, 0~31£¨×¢Òâ£º SMPDUTY Ò»¶¨²»ÄÜÉ
+             -èÖÃÐ¡ÓÚ 10£©
+  42   1          ADC_InitStructure.ADC_CsSetup   = 0;        //ADC Í¨µÀÑ¡ÔñÊ±¼ä¿ØÖÆ 0(Ä¬ÈÏ),1
+  43   1          ADC_InitStructure.ADC_CsHold    = 1;        //ADC Í¨µÀÑ¡Ôñ±£³ÖÊ±¼ä¿ØÖÆ 0,1(Ä¬ÈÏ),2,3
+  44   1          ADC_InitStructure.ADC_Speed     = ADC_SPEED_2X16T;       //ÉèÖÃ ADC ¹¤×÷Ê±ÖÓÆµÂÊ ADC_SPEED_2X1T~ADC_SP
+             -EED_2X16T
+  45   1          ADC_InitStructure.ADC_AdjResult = ADC_RIGHT_JUSTIFIED;  //ADC½á¹ûµ÷Õû,  ADC_LEFT_JUSTIFIED,ADC_RIGHT_J
+             -USTIFIED
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:49:11 PAGE 2   
+
+  46   1          ADC_Inilize(&ADC_InitStructure);        //³õÊ¼»¯
+  47   1          ADC_PowerControl(ENABLE);               //ADCµçÔ´¿ª¹Ø, ENABLE»òDISABLE
+  48   1          NVIC_ADC_Init(DISABLE, Priority_0);     //ÖÐ¶ÏÊ¹ÄÜ, ENABLE/DISABLE; ÓÅÏÈ¼¶(µÍµ½¸ß) Priority_0,Priority
+             -_1,Priority_2,Priority_3
+  49   1      }
+  50          
+  51          u16 code temp_table[] = {
+  52              58354, // -55 0
+  53              55464, // -54 1
+  54              52698, // -53 2
+  55              50048, // -52 3
+  56              47515, // -51 4
+  57              45097, // -50 5
+  58              42789, // -49 6
+  59              40589, // -48 7
+  60              38492, // -47 8
+  61              36496, // -46 9
+  62              34597, // -45 10
+  63              32791, // -44
+  64              31075, // -43
+  65              29444, // -42
+  66              27896, // -41
+  67              26427, // -40
+  68              25034, // -39
+  69              23713, // -38
+  70              22460, // -37
+  71              21273, // -36
+  72              20148, // -35
+  73              19083, // -34
+  74              18075, // -33
+  75              17120, // -32
+  76              16216, // -31
+  77              15361, // -30
+  78              14551, // -29
+  79              13785, // -28
+  80              13061, // -27
+  81              12376, // -26
+  82              11728, // -25
+  83              11114, // -24
+  84              10535, // -23
+  85              9986,  // -22
+  86              9468,  // -21
+  87              8977,  // -20
+  88              8513,  // -19
+  89              8075,  // -18
+  90              7660,  // -17
+  91              7267,  // -16
+  92              6896,  // -15
+  93              6545,  // -14
+  94              6212,  // -13
+  95              5898,  // -12
+  96              5601,  // -11
+  97              5319,  // -10
+  98              5053,  // -9
+  99              4801,  // -8
+ 100              4562,  // -7
+ 101              4336,  // -6
+ 102              4122,  // -5
+ 103              3920,  // -4
+ 104              3728,  // -3
+ 105              3546,  // -2
+ 106              3374,  // -1
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:49:11 PAGE 3   
+
+ 107              3211,  // 0
+ 108              3057,  // 1
+ 109              2910,  // 2
+ 110              2771,  // 3
+ 111              2639,  // 4
+ 112              2515,  // 5
+ 113              2396,  // 6
+ 114              2284,  // 7
+ 115              2177,  // 8
+ 116              2076,  // 9
+ 117              1978,  // 10
+ 118              1889,  // 11
+ 119              1802,  // 12
+ 120              1720,  // 13
+ 121              1642,  // 14
+ 122              1568,  // 15
+ 123              1497,  // 16
+ 124              1430,  // 17
+ 125              1366,  // 18
+ 126              1306,  // 19
+ 127              1248,  // 20
+ 128              1193,  // 21
+ 129              1141,  // 22
+ 130              1092,  // 23
+ 131              1044,  // 24
+ 132              1000,  // 25
+ 133              957,   // 26
+ 134              916,   // 27
+ 135              877,   // 28
+ 136              840,   // 29
+ 137              805,   // 30
+ 138              771,   // 31
+ 139              739,   // 32
+ 140              709,   // 33
+ 141              679,   // 34
+ 142              652,   // 35
+ 143              625,   // 36
+ 144              600,   // 37
+ 145              576,   // 38
+ 146              552,   // 39
+ 147              530,   // 40
+ 148              509,   // 41
+ 149              489,   // 42
+ 150              470,   // 43
+ 151              452,   // 44
+ 152              434,   // 45
+ 153              417,   // 46
+ 154              401,   // 47
+ 155              386,   // 48
+ 156              371,   // 49
+ 157              358,   // 50
+ 158              344,   // 51
+ 159              331,   // 52
+ 160              318,   // 53
+ 161              306,   // 54
+ 162              295,   // 55
+ 163              284,   // 56
+ 164              274,   // 57
+ 165              264,   // 58
+ 166              254,   // 59
+ 167              245,   // 60
+ 168              236,   // 61
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:49:11 PAGE 4   
+
+ 169              228,   // 62
+ 170              220,   // 63
+ 171              212,   // 64
+ 172              205,   // 65
+ 173              198,   // 66
+ 174              191,   // 67
+ 175              184,   // 68
+ 176              178,   // 69
+ 177              172,   // 70
+ 178              166,   // 71
+ 179              160,   // 72
+ 180              155,   // 73
+ 181              150,   // 74
+ 182              145,   // 75
+ 183              140,   // 76
+ 184              135,   // 77
+ 185              131,   // 78
+ 186              126,   // 79
+ 187              122,   // 80
+ 188              118,   // 81
+ 189              115,   // 82
+ 190              111,   // 83
+ 191              107,   // 84
+ 192              104,   // 85
+ 193              101,   // 86
+ 194              97,    // 87
+ 195              94,    // 88
+ 196              91,    // 89
+ 197              89,    // 90
+ 198              86,    // 91
+ 199              83,    // 92
+ 200              81,    // 93
+ 201              78,    // 94
+ 202              76,    // 95
+ 203              74,    // 96
+ 204              71,    // 97
+ 205              69,    // 98
+ 206              67,    // 99
+ 207              65,    // 100
+ 208              63,    // 101
+ 209              61,    // 102
+ 210              60,    // 103
+ 211              58,    // 104
+ 212              56,    // 105
+ 213              55,    // 106
+ 214              53,    // 107
+ 215              52,    // 108
+ 216              50,    // 109
+ 217              49,    // 110
+ 218              47,    // 111
+ 219              46,    // 112
+ 220              45,    // 113
+ 221              43,    // 114
+ 222              42,    // 115
+ 223              41,    // 116
+ 224              40,    // 117
+ 225              39,    // 118
+ 226              38,    // 119
+ 227              37,    // 120
+ 228              36,    // 121
+ 229              35,    // 122
+ 230              34,    // 123
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:49:11 PAGE 5   
+
+ 231              33,    // 124
+ 232              32,    // 125
+ 233          };
+ 234          
+ 235          #define ABS(x) ((x) > 0 ? (x) : -(x))
+ 236          
+ 237          /**********************************************************
+ 238           * @brief ¸ù¾Ýµç×èÖµ(KÅ·)x100¼ÆËãµÃµ½ÎÂ¶ÈÖµ
+ 239           * @param µç×èÖµ(KÅ·)x100
+ 240           * @return ÎÂ¶ÈË÷Òý
+ 241           **********************************************************/
+ 242          int search_temp(float ntc_Rx100) {
+ 243   1          int min_index = 0, i = 0;
+ 244   1          // ¼ÇÂ¼×îÐ¡¾àÀë
+ 245   1          float min_distance = ABS(ntc_Rx100 - temp_table[0]);
+ 246   1          // ¼ÆËãÊý×é³¤¶È
+ 247   1          int len = sizeof(temp_table) / sizeof(temp_table[0]);
+ 248   1      
+ 249   1          for (i = 1; i < len; i++) {
+ 250   2              // Öð¸ö¼ÆËã ntc_Rx100 ºÍÃ¿¸öÊýµÄ¾àÀë(Çó¾ø¶ÔÖµ)
+ 251   2              float distance = ABS(ntc_Rx100 - temp_table[i]);
+ 252   2      
+ 253   2              // ÅÐ¶ÏÊÇ·ñ¾àÀë¸ü½ü
+ 254   2              if (distance < min_distance) {
+ 255   3                  // ¼ÇÂ¼¸ü½üµÄ¾àÀë
+ 256   3                  min_distance = distance;
+ 257   3                  // ¼ÇÂ¼Ë÷ÒýÎ»ÖÃ
+ 258   3                  min_index = i;
+ 259   3              }
+ 260   2      //      printf("¾àÀë[%d] -> %.1f index: %d\n", temp_table[i], distance, (int)i);
+ 261   2          }
+ 262   1      
+ 263   1          return min_index;
+ 264   1      }
+ 265          
+ 266          
+ 267          int main(void) {
+ 268   1          u16 adc_Value;
+ 269   1          float ntc_V, ntc_R;
+ 270   1          int temp;
+ 271   1      
+ 272   1          EAXSFR();
+ 273   1      
+ 274   1          GPIO_config();
+ 275   1          UART_config();
+ 276   1          ADC_config();
+ 277   1      
+ 278   1          EA = 1;
+ 279   1      
+ 280   1          while (1) {
+ 281   2              adc_Value = Get_ADCResult(ADC_CH12);
+ 282   2              ntc_V = adc_Value * 2.5 / 4096;
+ 283   2              ntc_R = ntc_V * 10 / (3.3 - ntc_V);
+ 284   2              temp = search_temp(ntc_R * 100) - 55;
+ 285   2              
+ 286   2              printf("adc_Value: %d\n", adc_Value);
+ 287   2              printf("V: %.3f V\n", ntc_V);    // µçÑ¹£¬µ¥Î» V
+ 288   2              printf("R: %.3f\n", ntc_R);
+ 289   2              printf("Temp: %d\n",  temp);
+ 290   2              
+ 291   2              delay_ms(250);
+ 292   2          }
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 19:49:11 PAGE 6   
+
+ 293   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    741    ----
+   CONSTANT SIZE    =    407    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      46
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

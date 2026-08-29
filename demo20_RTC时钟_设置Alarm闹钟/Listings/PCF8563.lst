@@ -1,0 +1,147 @@
+C51 COMPILER V9.60.7.0   PCF8563                                                           08/28/2026 11:24:48 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE PCF8563
+OBJECT MODULE PLACED IN .\Objects\PCF8563.obj
+COMPILER INVOKED BY: D:\Develop\Keil_v5\C51\BIN\C51.EXE PCF8563.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Li
+                    -stings\PCF8563.lst) OBJECT(.\Objects\PCF8563.obj)
+
+line level    source
+
+   1          #include "PCF8563.h"
+   2          
+   3          static void GPIO_config(void) {
+   4   1          GPIO_InitTypeDef    GPIO_InitStructure;
+   5   1          GPIO_InitStructure.Pin  = GPIO_Pin_2 | GPIO_Pin_3;
+   6   1          GPIO_InitStructure.Mode = GPIO_OUT_OD;
+   7   1          GPIO_Inilize(GPIO_P3, &GPIO_InitStructure);
+   8   1      }
+   9          
+  10          /****************  I2C初始化函数 *****************/
+  11          void I2C_config(void)
+  12          {
+  13   1              I2C_InitTypeDef         I2C_InitStructure;
+  14   1      
+  15   1              I2C_InitStructure.I2C_Mode      = I2C_Mode_Master;      // 主从选择   I2C_Mode_Master, I2C_Mode_Slave
+  16   1              I2C_InitStructure.I2C_Enable    = ENABLE;                       // I2C功能使能,   ENABLE, DISABLE
+  17   1              I2C_InitStructure.I2C_MS_WDTA   = DISABLE;                      // 主机使能自动发送,  ENABLE, DISABLE
+  18   1              I2C_InitStructure.I2C_Speed     = 13;                           // 总线速度=Fosc/2/(Speed*2+4),      0~63
+  19   1          /*                                           速度 =  24M / 2 / (16 * 2 + 4)
+  20   1                                                       速度 =  12M / 36  = 333.3Kbit/s
+  21   1                                                          
+  22   1                                                       400 = 12K / (Speed * 2 + 4)
+  23   1                                                       400Kbit/s -> 13
+  24   1                                                       100Kbit/s -> 58
+  25   1          */
+  26   1              I2C_Init(&I2C_InitStructure);
+  27   1          
+  28   1              NVIC_I2C_Init(I2C_Mode_Master,DISABLE,Priority_0);      //主从模式, I2C_Mode_Master, I2C_Mode_Slave; 中断使能,
+             - ENABLE/DISABLE; 优先级(低到高) Priority_0,Priority_1,Priority_2,Priority_3
+  29   1      
+  30   1          // 引脚选择
+  31   1              I2C_SW(I2C_P33_P32);                                    //I2C_P14_P15,I2C_P24_P25,I2C_P33_P32
+  32   1      }
+  33          
+  34          void PCF8563_init(void) {
+  35   1          EAXSFR();
+  36   1          GPIO_config();
+  37   1          I2C_config();
+  38   1      }
+  39          
+  40          void PCF8563_set_Clock(Clock_t c) {
+  41   1          u8 p[TIME_NUMBER] = {0};
+  42   1          u8 C;
+  43   1          
+  44   1          p[0] = ((c.seconds / 10) << 4) | (c.seconds % 10);
+  45   1          p[1] = ((c.minutes / 10) << 4) | (c.minutes % 10);
+  46   1          p[2] = ((c.hours / 10) << 4)   | (c.hours % 10);
+  47   1          p[3] = ((c.days / 10) << 4)    | (c.days % 10);
+  48   1          p[4] = c.weekdays;
+  49   1          
+  50   1          C = (c.years >= 2100) ? 1 : 0;
+  51   1          
+  52   1          p[5] = (C << 7) |((c.months / 10) << 4)  | (c.months % 10);
+  53   1          p[6] = ((c.years % 100 / 10) << 4) | (c.years % 10);
+C51 COMPILER V9.60.7.0   PCF8563                                                           08/28/2026 11:24:48 PAGE 2   
+
+  54   1          
+  55   1          I2C_WriteNbyte(PCF8563_ADDR, PCF8563_REG, p, TIME_NUMBER);
+  56   1      }
+  57          
+  58          void PCF8563_get_Clock(Clock_t * c) {
+  59   1          u8 p[TIME_NUMBER] = {0};
+  60   1          u8 C;
+  61   1          
+  62   1          I2C_ReadNbyte(PCF8563_ADDR, PCF8563_REG, p, TIME_NUMBER);
+  63   1          
+  64   1          c->seconds  = ((p[0] >> 4)& 0x07) * 10 + (p[0] & 0x0F);
+  65   1          c->minutes  = ((p[1] >> 4)& 0x07) * 10 + (p[1] & 0x0F);
+  66   1          c->hours    = ((p[2] >> 4)& 0x03) * 10 + (p[2] & 0x0F);
+  67   1          c->days     = ((p[3] >> 4)& 0x03) * 10 + (p[3] & 0x0F);
+  68   1          c->weekdays = p[4];
+  69   1          c->months   = ((p[5] >> 4)& 0x01) * 10 + (p[5] & 0x0F);
+  70   1          c->years    = ((p[6] >> 4)& 0x0F) * 10 + (p[6] & 0x0F);
+  71   1          
+  72   1          C = p[5] & 0x80;
+  73   1          
+  74   1          c->years += (C == 0) ? 2000 : 2100;
+  75   1      }
+  76          
+  77          void PCF8563_set_Alarm(Alarm_t a) {
+  78   1          //默认所有时间单位都禁用
+  79   1          u8 alarm[ALARM_NUMBER] = {0x80, 0x80, 0x80, 0x80};
+  80   1          
+  81   1          // 设置闹铃 --------------------------------------------------------------
+  82   1          // 设置闹铃时间: 09h分钟, 0Ah小时, 0Bh天, 0Ch周 (最高0: 启动)
+  83   1          // 分:  M 1 1 1 - 0 0 0 0 十进制数 -> BCD 最高位 启用 &(~0x10), 禁用 |0x80
+  84   1          if(a.alarm_minute >= 0) {
+  85   2              alarm[0] = (~0x10) & ((a.alarm_minute / 10) << 4) | (a.alarm_minute % 10);
+  86   2          }
+  87   1          
+  88   1          if(a.alarm_hour >= 0) {
+  89   2              alarm[1] = (~0x10) & ((a.alarm_hour / 10) << 4) | (a.alarm_hour % 10);
+  90   2          }
+  91   1          
+  92   1          if(a.alarm_day >= 0) {
+  93   2              alarm[2] = (~0x10) & ((a.alarm_day / 10) << 4) | (a.alarm_day % 10);
+  94   2          }
+  95   1          
+  96   1          if(a.alarm_week >= 0) {
+  97   2              alarm[3] = (~0x10) & a.alarm_week;
+  98   2          }
+  99   1          
+ 100   1          I2C_WriteNbyte(PCF8563_ADDR, PCF8563_ALARM, alarm, ALARM_NUMBER);
+ 101   1      }
+ 102          
+ 103          void PCF8563_enable_Alarm(u8 enable) {
+ 104   1          u8 enAlarm;
+ 105   1          
+ 106   1          I2C_ReadNbyte(PCF8563_ADDR, PCF8563_ENALARM, &enAlarm, 1);
+ 107   1          
+ 108   1          // AF -> 清理Alarm中断标记 Alarm Flag Bit3清0, 确保闹铃中断触发
+ 109   1          enAlarm &= ~(1 << 3);
+ 110   1          // AIE-> 开启Alarm中断 Bit1置1, Alarm Interrupt Enable
+ 111   1          if(enable) {
+ 112   2              enAlarm |=  (1 << 1);
+ 113   2          } else {
+ 114   2              enAlarm &= ~(1 << 1);
+ 115   2          }
+C51 COMPILER V9.60.7.0   PCF8563                                                           08/28/2026 11:24:48 PAGE 3   
+
+ 116   1          
+ 117   1          I2C_WriteNbyte(PCF8563_ADDR, PCF8563_ENALARM, &enAlarm, 1);
+ 118   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    694    ----
+   CONSTANT SIZE    =     18    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      43
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

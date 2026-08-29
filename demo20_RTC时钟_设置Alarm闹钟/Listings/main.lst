@@ -1,0 +1,169 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              08/28/2026 11:24:47 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Develop\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listi
+                    -ngs\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "Config.h"
+   2          #include "GPIO.h"
+   3          #include "UART.h"
+   4          #include "NVIC.h"
+   5          #include "Switch.h"
+   6          #include "Timer.h"
+   7          #include "Delay.h"
+   8          #include "ADC.h"
+   9          #include "STC8H_PWM.h"
+  10          #include "I2C.h"
+  11          #include "PCF8563.h"
+  12          #include "Exti.h"
+  13          
+  14          /*************************************************************************************
+  15          RTC时钟
+  16          
+  17          1. 通过I2C外设(协议)读取PCF8563芯片数据(16字节)
+  18              - 开启扩展寄存器访问使能 EAXSFR()
+  19              - 引脚模式: 开漏输出模式 Open 1, Drain 0
+  20              - I2C协议(一对多)
+  21              
+  22          2. 引脚
+  23              - SCL: P3.2 时钟线   (Serial Clock)
+  24              - SDA: P3.3 数据线   (Serial Data)
+  25              - INT: P3.7 下降沿
+  26              
+  27          读取芯片里的年月日, 时分秒(世纪, 周)
+  28          
+  29          *************************************************************************************/
+  30          
+  31          void GPIO_config(void) {
+  32   1          GPIO_InitTypeDef    GPIO_InitStructure;
+  33   1          GPIO_InitStructure.Pin  = GPIO_Pin_0 | GPIO_Pin_1;          //指定要初始化的IO,
+  34   1          GPIO_InitStructure.Mode = GPIO_PullUp;          //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD
+             -,GPIO_OUT_PP
+  35   1          GPIO_Inilize(GPIO_P3, &GPIO_InitStructure);//初始化
+  36   1          
+  37   1          GPIO_InitStructure.Pin  = GPIO_Pin_7;               //指定要初始化的IO,
+  38   1          GPIO_InitStructure.Mode = GPIO_PullUp;          //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD
+             -,GPIO_OUT_PP
+  39   1          GPIO_Inilize(GPIO_P3, &GPIO_InitStructure);//初始化
+  40   1      }
+  41          
+  42          void UART_config(void) {
+  43   1          // >>> 记得添加 NVIC.c, UART.c, UART_Isr.c <<<
+  44   1          COMx_InitDefine     COMx_InitStructure;                 //结构定义
+  45   1          COMx_InitStructure.UART_Mode      = UART_8bit_BRTx; //模式, UART_ShiftRight,UART_8bit_BRTx,UART_9bit,U
+             -ART_9bit_BRTx
+  46   1          COMx_InitStructure.UART_BRT_Use   = BRT_Timer1;         //选择波特率发生器, BRT_Timer1, BRT_Timer2 (注
+             -意: 串口2固定使用BRT_Timer2)
+  47   1          COMx_InitStructure.UART_BaudRate  = 115200ul;           //波特率, 一般 110 ~ 115200
+  48   1          COMx_InitStructure.UART_RxEnable  = ENABLE;             //接收允许,   ENABLE或DISABLE
+  49   1          COMx_InitStructure.BaudRateDouble = DISABLE;            //波特率加倍, ENABLE或DISABLE
+  50   1          UART_Configuration(UART1, &COMx_InitStructure);     //初始化串口1 UART1,UART2,UART3,UART4
+C51 COMPILER V9.60.7.0   MAIN                                                              08/28/2026 11:24:47 PAGE 2   
+
+  51   1      
+  52   1          NVIC_UART1_Init(ENABLE, Priority_1);    //中断使能, ENABLE/DISABLE; 优先级(低到高) Priority_0,Priority
+             -_1,Priority_2,Priority_3
+  53   1          UART1_SW(UART1_SW_P30_P31);     // 引脚选择, UART1_SW_P30_P31,UART1_SW_P36_P37,UART1_SW_P16_P17,UART1_
+             -SW_P43_P44
+  54   1      }
+  55          
+  56          /******************** INT配置 ********************/
+  57          void Exti_config(void)
+  58          {
+  59   1              EXTI_InitTypeDef        Exti_InitStructure;                                                     //结构定义
+  60   1      
+  61   1              Exti_InitStructure.EXTI_Mode      = EXT_MODE_Fall;//中断模式,   EXT_MODE_RiseFall,EXT_MODE_Fall
+  62   1              Ext_Inilize(EXT_INT3,&Exti_InitStructure);                              //初始化
+  63   1              NVIC_INT3_Init(ENABLE,Priority_0);              //中断使能, ENABLE/DISABLE; 优先级(低到高) Priority_0,Priority_1,Prio
+             -rity_2,Priority_3
+  64   1      }
+  65          
+  66          void exti_int3_call(void) {
+  67   1          Alarm_t a;
+  68   1          
+  69   1          printf("Alarm!!!");
+  70   1          
+  71   1          //重新设置闹钟
+  72   1          a.alarm_minute = 1, a.alarm_hour = 0, a.alarm_day = 28, a.alarm_week = 4;
+  73   1          PCF8563_set_Alarm(a);
+  74   1          
+  75   1          // 清理Alarm的AF标记
+  76   1          // AF -> 清理Alarm中断标记 Alarm Flag Bit3清0, 确保闹铃中断触发
+  77   1          PCF8563_enable_Alarm(ENABLE);
+  78   1      }
+  79          
+  80          
+  81          int main(void) {
+  82   1          Clock_t c;
+  83   1          Alarm_t a;
+  84   1          
+  85   1          EAXSFR();
+  86   1      
+  87   1          GPIO_config();
+  88   1          UART_config();
+  89   1          PCF8563_init();
+  90   1          Exti_config();
+  91   1      
+  92   1          EA = 1;
+  93   1          
+  94   1              /*****************************************
+  95   1          两个地址:
+  96   1          dev_addr: 设备地址, 决定了I2C和哪个设备通讯(device address)
+  97   1              - 设备地址:   0x51 (7bit)
+  98   1              - 设备读地址：0xA3;  (0x51 << 1) | 1
+  99   1              - 设备写地址：0xA2;  (0x51 << 1)
+ 100   1          
+ 101   1          mem_addr: 存储地址, 决定了I2C和该设备的哪个寄存器register交互(memory address)
+ 102   1              - 用于指定从哪个寄存器开始读写数据
+ 103   1              - 每次读写数据字节后，寄存器地址自动累加。
+ 104   1          
+ 105   1          u8 *p   : 读写数据缓冲区
+ 106   1          TIME_NUMBER  : 读写的数据个数
+ 107   1          ******************************************/
+ 108   1          c.years = 2026, c.months = 8, c.days = 27, c.weekdays = 3;
+ 109   1          c.hours = 23, c.minutes = 59, c.seconds = 55;
+C51 COMPILER V9.60.7.0   MAIN                                                              08/28/2026 11:24:47 PAGE 3   
+
+ 110   1          PCF8563_set_Clock(c);
+ 111   1          
+ 112   1          //禁用哪个时间单位，就把那个时间单位置为负数
+ 113   1          a.alarm_minute = 0, a.alarm_hour = 0, a.alarm_day = 28, a.alarm_week = 4;
+ 114   1          PCF8563_set_Alarm(a);
+ 115   1          
+ 116   1          PCF8563_enable_Alarm(ENABLE);
+ 117   1          
+ 118   1          while (1) {
+ 119   2              PCF8563_get_Clock(&c);
+ 120   2              
+ 121   2              // BCD格式数据, 要用16进制打印
+ 122   2              // 年-月-日
+ 123   2              printf("%04d-%02d-%02d\n", (int)c.years, (int)c.months, (int)c.days);
+ 124   2              // 时:分:秒
+ 125   2              printf("%02d:%02d:%02d\n", (int)c.hours, (int)c.minutes, (int)c.seconds);
+ 126   2              // week
+ 127   2              printf("week->%d\n", (int)c.weekdays);
+ 128   2              
+ 129   2              delay_ms(250);
+ 130   2              delay_ms(250);
+ 131   2              delay_ms(250);
+ 132   2              delay_ms(250);
+ 133   2          }
+ 134   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    341    ----
+   CONSTANT SIZE    =     51    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      28
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

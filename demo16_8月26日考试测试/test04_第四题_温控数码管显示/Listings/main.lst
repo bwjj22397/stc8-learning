@@ -1,0 +1,365 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 21:27:23 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Develop\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listi
+                    -ngs\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "Config.h"
+   2          #include "GPIO.h"
+   3          #include "NVIC.h"
+   4          #include "UART.h"
+   5          #include "Switch.h"
+   6          #include "ADC.h"
+   7          #include "Timer.h"
+   8          #include "STC8H_PWM.h"
+   9          #include "Delay.h"
+  10          #include "NIXIE.h"
+  11          
+  12          void GPIO_config(void) {
+  13   1          GPIO_InitTypeDef    GPIO_InitStructure;
+  14   1          GPIO_InitStructure.Pin  = GPIO_Pin_4;       //Ö¸¶¨Òª³õÊ¼»¯µÄIO,
+  15   1          GPIO_InitStructure.Mode = GPIO_HighZ;       //Ö¸¶¨IOµÄÊäÈë»òÊä³ö·½Ê½,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_O
+             -D,GPIO_OUT_PP
+  16   1          GPIO_Inilize(GPIO_P0, &GPIO_InitStructure);//³õÊ¼»¯
+  17   1      
+  18   1          GPIO_InitStructure.Pin  = GPIO_Pin_0 | GPIO_Pin_1;      //Ö¸¶¨Òª³õÊ¼»¯µÄIO,
+  19   1          GPIO_InitStructure.Mode = GPIO_PullUp;      //Ö¸¶¨IOµÄÊäÈë»òÊä³ö·½Ê½,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_O
+             -D,GPIO_OUT_PP
+  20   1          GPIO_Inilize(GPIO_P3, &GPIO_InitStructure);//³õÊ¼»¯
+  21   1      
+  22   1          Nixie_GPIO_INIT();
+  23   1      }
+  24          
+  25          void UART_config(void) {
+  26   1          // >>> ¼ÇµÃÌí¼Ó NVIC.c, UART.c, UART_Isr.c <<<
+  27   1          COMx_InitDefine     COMx_InitStructure;                 //½á¹¹¶¨Òå
+  28   1          COMx_InitStructure.UART_Mode      = UART_8bit_BRTx; //Ä£Ê½, UART_ShiftRight,UART_8bit_BRTx,UART_9bit,U
+             -ART_9bit_BRTx
+  29   1          COMx_InitStructure.UART_BRT_Use   = BRT_Timer1;         //Ñ¡Ôñ²¨ÌØÂÊ·¢ÉúÆ÷, BRT_Timer1, BRT_Timer2 (×¢
+             -Òâ: ´®¿Ú2¹Ì¶¨Ê¹ÓÃBRT_Timer2)
+  30   1          COMx_InitStructure.UART_BaudRate  = 115200ul;           //²¨ÌØÂÊ, Ò»°ã 110 ~ 115200
+  31   1          COMx_InitStructure.UART_RxEnable  = ENABLE;             //½ÓÊÕÔÊÐí,   ENABLE»òDISABLE
+  32   1          COMx_InitStructure.BaudRateDouble = DISABLE;            //²¨ÌØÂÊ¼Ó±¶, ENABLE»òDISABLE
+  33   1          UART_Configuration(UART1, &COMx_InitStructure);     //³õÊ¼»¯´®¿Ú1 UART1,UART2,UART3,UART4
+  34   1      
+  35   1          NVIC_UART1_Init(ENABLE, Priority_1);    //ÖÐ¶ÏÊ¹ÄÜ, ENABLE/DISABLE; ÓÅÏÈ¼¶(µÍµ½¸ß) Priority_0,Priority
+             -_1,Priority_2,Priority_3
+  36   1          UART1_SW(UART1_SW_P30_P31);     // Òý½ÅÑ¡Ôñ, UART1_SW_P30_P31,UART1_SW_P36_P37,UART1_SW_P16_P17,UART1_
+             -SW_P43_P44
+  37   1      }
+  38          
+  39          /******************* ADÅäÖÃº¯Êý *******************/
+  40          void    ADC_config(void) {
+  41   1          ADC_InitTypeDef     ADC_InitStructure;      //½á¹¹¶¨Òå
+  42   1      
+  43   1          ADC_InitStructure.ADC_SMPduty   = 31;       //ADC Ä£ÄâÐÅºÅ²ÉÑùÊ±¼ä¿ØÖÆ, 0~31£¨×¢Òâ£º SMPDUTY Ò»¶¨²»ÄÜÉ
+             -èÖÃÐ¡ÓÚ 10£©
+  44   1          ADC_InitStructure.ADC_CsSetup   = 0;        //ADC Í¨µÀÑ¡ÔñÊ±¼ä¿ØÖÆ 0(Ä¬ÈÏ),1
+  45   1          ADC_InitStructure.ADC_CsHold    = 1;        //ADC Í¨µÀÑ¡Ôñ±£³ÖÊ±¼ä¿ØÖÆ 0,1(Ä¬ÈÏ),2,3
+  46   1          ADC_InitStructure.ADC_Speed     = ADC_SPEED_2X16T;       //ÉèÖÃ ADC ¹¤×÷Ê±ÖÓÆµÂÊ ADC_SPEED_2X1T~ADC_SP
+             -EED_2X16T
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 21:27:23 PAGE 2   
+
+  47   1          ADC_InitStructure.ADC_AdjResult = ADC_RIGHT_JUSTIFIED;  //ADC½á¹ûµ÷Õû,  ADC_LEFT_JUSTIFIED,ADC_RIGHT_J
+             -USTIFIED
+  48   1          ADC_Inilize(&ADC_InitStructure);        //³õÊ¼»¯
+  49   1          ADC_PowerControl(ENABLE);               //ADCµçÔ´¿ª¹Ø, ENABLE»òDISABLE
+  50   1          NVIC_ADC_Init(DISABLE, Priority_0);     //ÖÐ¶ÏÊ¹ÄÜ, ENABLE/DISABLE; ÓÅÏÈ¼¶(µÍµ½¸ß) Priority_0,Priority
+             -_1,Priority_2,Priority_3
+  51   1      }
+  52          
+  53          void    Timer_config(void) {
+  54   1          TIM_InitTypeDef     TIM_InitStructure;                      //½á¹¹¶¨Òå
+  55   1          //¶¨Ê±Æ÷0×ö16Î»×Ô¶¯ÖØ×°, ÖÐ¶ÏÆµÂÊÎª1000HZ
+  56   1          TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;  //Ö¸¶¨¹¤×÷Ä£Ê½,   TIM_16BitAutoReload,TIM_16Bi
+             -t,TIM_8BitAutoReload,TIM_16BitAutoReloadNoMask
+  57   1          TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_1T;     //Ö¸¶¨Ê±ÖÓÔ´,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_C
+             -LOCK_Ext
+  58   1          TIM_InitStructure.TIM_ClkOut    = DISABLE;              //ÊÇ·ñÊä³ö¸ßËÙÂö³å, ENABLE»òDISABLE
+  59   1          TIM_InitStructure.TIM_Value     = 65536UL - (MAIN_Fosc / 1000UL);       //³õÖµ,
+  60   1          TIM_InitStructure.TIM_Run       = ENABLE;               //ÊÇ·ñ³õÊ¼»¯ºóÆô¶¯¶¨Ê±Æ÷, ENABLE»òDISABLE
+  61   1          Timer_Inilize(Timer0, &TIM_InitStructure);              //³õÊ¼»¯Timer0    Timer0,Timer1,Timer2,Timer3,
+             -Timer4
+  62   1          NVIC_Timer0_Init(DISABLE, Priority_0);      //ÖÐ¶ÏÊ¹ÄÜ, ENABLE/DISABLE; ÓÅÏÈ¼¶(µÍµ½¸ß) Priority_0,Prio
+             -rity_1,Priority_2,Priority_3
+  63   1      }
+  64          
+  65          void Timer0_ISR_Handler(void) interrupt TMR0_VECTOR {       //½øÖÐ¶ÏÊ±ÒÑ¾­Çå³ý±êÖ¾
+  66   1      
+  67   1      }
+  68          
+  69          u16 code temp_table[] = {
+  70              58354, // -55 0
+  71              55464, // -54 1
+  72              52698, // -53 2
+  73              50048, // -52 3
+  74              47515, // -51 4
+  75              45097, // -50 5
+  76              42789, // -49 6
+  77              40589, // -48 7
+  78              38492, // -47 8
+  79              36496, // -46 9
+  80              34597, // -45 10
+  81              32791, // -44
+  82              31075, // -43
+  83              29444, // -42
+  84              27896, // -41
+  85              26427, // -40
+  86              25034, // -39
+  87              23713, // -38
+  88              22460, // -37
+  89              21273, // -36
+  90              20148, // -35
+  91              19083, // -34
+  92              18075, // -33
+  93              17120, // -32
+  94              16216, // -31
+  95              15361, // -30
+  96              14551, // -29
+  97              13785, // -28
+  98              13061, // -27
+  99              12376, // -26
+ 100              11728, // -25
+ 101              11114, // -24
+ 102              10535, // -23
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 21:27:23 PAGE 3   
+
+ 103              9986,  // -22
+ 104              9468,  // -21
+ 105              8977,  // -20
+ 106              8513,  // -19
+ 107              8075,  // -18
+ 108              7660,  // -17
+ 109              7267,  // -16
+ 110              6896,  // -15
+ 111              6545,  // -14
+ 112              6212,  // -13
+ 113              5898,  // -12
+ 114              5601,  // -11
+ 115              5319,  // -10
+ 116              5053,  // -9
+ 117              4801,  // -8
+ 118              4562,  // -7
+ 119              4336,  // -6
+ 120              4122,  // -5
+ 121              3920,  // -4
+ 122              3728,  // -3
+ 123              3546,  // -2
+ 124              3374,  // -1
+ 125              3211,  // 0
+ 126              3057,  // 1
+ 127              2910,  // 2
+ 128              2771,  // 3
+ 129              2639,  // 4
+ 130              2515,  // 5
+ 131              2396,  // 6
+ 132              2284,  // 7
+ 133              2177,  // 8
+ 134              2076,  // 9
+ 135              1978,  // 10
+ 136              1889,  // 11
+ 137              1802,  // 12
+ 138              1720,  // 13
+ 139              1642,  // 14
+ 140              1568,  // 15
+ 141              1497,  // 16
+ 142              1430,  // 17
+ 143              1366,  // 18
+ 144              1306,  // 19
+ 145              1248,  // 20
+ 146              1193,  // 21
+ 147              1141,  // 22
+ 148              1092,  // 23
+ 149              1044,  // 24
+ 150              1000,  // 25
+ 151              957,   // 26
+ 152              916,   // 27
+ 153              877,   // 28
+ 154              840,   // 29
+ 155              805,   // 30
+ 156              771,   // 31
+ 157              739,   // 32
+ 158              709,   // 33
+ 159              679,   // 34
+ 160              652,   // 35
+ 161              625,   // 36
+ 162              600,   // 37
+ 163              576,   // 38
+ 164              552,   // 39
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 21:27:23 PAGE 4   
+
+ 165              530,   // 40
+ 166              509,   // 41
+ 167              489,   // 42
+ 168              470,   // 43
+ 169              452,   // 44
+ 170              434,   // 45
+ 171              417,   // 46
+ 172              401,   // 47
+ 173              386,   // 48
+ 174              371,   // 49
+ 175              358,   // 50
+ 176              344,   // 51
+ 177              331,   // 52
+ 178              318,   // 53
+ 179              306,   // 54
+ 180              295,   // 55
+ 181              284,   // 56
+ 182              274,   // 57
+ 183              264,   // 58
+ 184              254,   // 59
+ 185              245,   // 60
+ 186              236,   // 61
+ 187              228,   // 62
+ 188              220,   // 63
+ 189              212,   // 64
+ 190              205,   // 65
+ 191              198,   // 66
+ 192              191,   // 67
+ 193              184,   // 68
+ 194              178,   // 69
+ 195              172,   // 70
+ 196              166,   // 71
+ 197              160,   // 72
+ 198              155,   // 73
+ 199              150,   // 74
+ 200              145,   // 75
+ 201              140,   // 76
+ 202              135,   // 77
+ 203              131,   // 78
+ 204              126,   // 79
+ 205              122,   // 80
+ 206              118,   // 81
+ 207              115,   // 82
+ 208              111,   // 83
+ 209              107,   // 84
+ 210              104,   // 85
+ 211              101,   // 86
+ 212              97,    // 87
+ 213              94,    // 88
+ 214              91,    // 89
+ 215              89,    // 90
+ 216              86,    // 91
+ 217              83,    // 92
+ 218              81,    // 93
+ 219              78,    // 94
+ 220              76,    // 95
+ 221              74,    // 96
+ 222              71,    // 97
+ 223              69,    // 98
+ 224              67,    // 99
+ 225              65,    // 100
+ 226              63,    // 101
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 21:27:23 PAGE 5   
+
+ 227              61,    // 102
+ 228              60,    // 103
+ 229              58,    // 104
+ 230              56,    // 105
+ 231              55,    // 106
+ 232              53,    // 107
+ 233              52,    // 108
+ 234              50,    // 109
+ 235              49,    // 110
+ 236              47,    // 111
+ 237              46,    // 112
+ 238              45,    // 113
+ 239              43,    // 114
+ 240              42,    // 115
+ 241              41,    // 116
+ 242              40,    // 117
+ 243              39,    // 118
+ 244              38,    // 119
+ 245              37,    // 120
+ 246              36,    // 121
+ 247              35,    // 122
+ 248              34,    // 123
+ 249              33,    // 124
+ 250              32,    // 125
+ 251          };
+ 252          
+ 253          #define ABS(x) ((x) > 0 ? (x) : -(x))
+ 254          
+ 255          /**********************************************************
+ 256           * @brief ¸ù¾Ýµç×èÖµ(KÅ·)x100¼ÆËãµÃµ½ÎÂ¶ÈÖµ
+ 257           * @param µç×èÖµ(KÅ·)x100
+ 258           * @return ÎÂ¶ÈË÷Òý
+ 259           **********************************************************/
+ 260          int search_temp(float ntc_Rx100) {
+ 261   1          int min_index = 0, i = 0;
+ 262   1          // ¼ÇÂ¼×îÐ¡¾àÀë
+ 263   1          float min_distance = ABS(ntc_Rx100 - temp_table[0]);
+ 264   1          // ¼ÆËãÊý×é³¤¶È
+ 265   1          int len = sizeof(temp_table) / sizeof(temp_table[0]);
+ 266   1      
+ 267   1          for (i = 1; i < len; i++) {
+ 268   2              // Öð¸ö¼ÆËã ntc_Rx100 ºÍÃ¿¸öÊýµÄ¾àÀë(Çó¾ø¶ÔÖµ)
+ 269   2              float distance = ABS(ntc_Rx100 - temp_table[i]);
+ 270   2      
+ 271   2              // ÅÐ¶ÏÊÇ·ñ¾àÀë¸ü½ü
+ 272   2              if (distance < min_distance) {
+ 273   3                  // ¼ÇÂ¼¸ü½üµÄ¾àÀë
+ 274   3                  min_distance = distance;
+ 275   3                  // ¼ÇÂ¼Ë÷ÒýÎ»ÖÃ
+ 276   3                  min_index = i;
+ 277   3              }
+ 278   2      //      printf("¾àÀë[%d] -> %.1f index: %d\n", temp_table[i], distance, (int)i);
+ 279   2          }
+ 280   1      
+ 281   1          return min_index;
+ 282   1      }
+ 283          
+ 284          
+ 285          int main(void) {
+ 286   1          u16 adc_Value;
+ 287   1          float ntc_V, ntc_R;
+ 288   1          int temp;
+C51 COMPILER V9.60.7.0   MAIN                                                              08/26/2026 21:27:23 PAGE 6   
+
+ 289   1          u8 a;
+ 290   1          u8 b;
+ 291   1      
+ 292   1          EAXSFR();
+ 293   1      
+ 294   1          GPIO_config();
+ 295   1          UART_config();
+ 296   1          ADC_config();
+ 297   1          Timer_config();
+ 298   1      
+ 299   1          EA = 1;
+ 300   1      
+ 301   1      
+ 302   1      
+ 303   1          while (1) {
+ 304   2              adc_Value = Get_ADCResult(ADC_CH12);
+ 305   2              ntc_V = adc_Value * 2.5 / 4096;
+ 306   2              ntc_R = ntc_V * 10 / (3.3 - ntc_V);
+ 307   2              temp = search_temp(ntc_R * 100) - 55;
+ 308   2      
+ 309   2              a = temp / 10;
+ 310   2              b = temp % 10;
+ 311   2              
+ 312   2              Nixie_Display(a, 0);
+ 313   2              delay_ms(5);
+ 314   2              Nixie_Display(b, 1);
+ 315   2              delay_ms(5);
+ 316   2          }
+ 317   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    752    ----
+   CONSTANT SIZE    =    362    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      55
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

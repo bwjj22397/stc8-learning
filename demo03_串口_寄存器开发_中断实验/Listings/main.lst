@@ -1,0 +1,122 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              08/18/2026 11:54:07 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Develop\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listi
+                    -ngs\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "reg51.h"
+   2          #include "intrins.h"
+   3          
+   4          
+   5          sfr     T2L     =   0xd7;
+   6          sfr     T2H     =   0xd6;
+   7          sfr     AUXR    =   0x8e;
+   8          
+   9          sfr     P0M1    =   0x93;
+  10          sfr     P0M0    =   0x94;
+  11          sfr     P1M1    =   0x91;
+  12          sfr     P1M0    =   0x92;
+  13          sfr     P2M1    =   0x95;
+  14          sfr     P2M0    =   0x96;
+  15          sfr     P3M1    =   0xb1;
+  16          sfr     P3M0    =   0xb2;
+  17          sfr     P4M1    =   0xb3;
+  18          sfr     P4M0    =   0xb4;
+  19          sfr     P5M1    =   0xc9;
+  20          sfr     P5M0    =   0xca;
+  21          
+  22          sbit    P10     =   P1^0;
+  23          sbit    P11     =   P1^1;
+  24          
+  25          sfr     P5      =   0xc8;
+  26          sbit    P53     =   P5^3;
+  27          
+  28          void UART1_Isr() interrupt 4
+  29          {
+  30   1          if (TI)
+  31   1          {
+  32   2              TI = 0;                                 //清中断标志
+  33   2              P53 = 1;
+  34   2          }
+  35   1          
+  36   1          if (RI)
+  37   1          {
+  38   2              RI = 0;                                 //清中断标志
+  39   2              P53 = 0;
+  40   2          }
+  41   1      }
+  42          
+  43          void Delay1000ms(void)  //@11.0592MHz
+  44          {
+  45   1              unsigned char data i, j, k;
+  46   1      
+  47   1              i = 57;
+  48   1              j = 27;
+  49   1              k = 112;
+  50   1              do
+  51   1              {
+  52   2                      do
+  53   2                      {
+  54   3                              while (--k);
+C51 COMPILER V9.60.7.0   MAIN                                                              08/18/2026 11:54:07 PAGE 2   
+
+  55   3                      } while (--j);
+  56   2              } while (--i);
+  57   1      }
+  58          
+  59          
+  60          void main()
+  61          {
+  62   1          P5M1 &= ~(1 << 3);
+  63   1          P5M0 |= (1 << 3);
+  64   1         
+  65   1          
+  66   1          P0M0 = 0x00;
+  67   1          P0M1 = 0x00;
+  68   1          P1M0 = 0x00;
+  69   1          P1M1 = 0x00;
+  70   1          P2M0 = 0x00;
+  71   1          P2M1 = 0x00;
+  72   1          P3M0 = 0x00;
+  73   1          P3M1 = 0x00;
+  74   1          P4M0 = 0x00;
+  75   1          P4M1 = 0x00;
+  76   1          
+  77   1      
+  78   1          SCON = 0x50;
+  79   1          T2L = 0xe8;                                 //65536-11059200/115200/4=0FFE8H
+  80   1          T2H = 0xff;
+  81   1          AUXR = 0x15;                                //启动定时器
+  82   1          ES = 1;                                     //使能串口中断
+  83   1          EA = 1;
+  84   1          SBUF = 0x5a;                                //发送测试数据
+  85   1      
+  86   1          while (1){
+  87   2              
+  88   2              SBUF = 0x26;
+  89   2              Delay1000ms();
+  90   2              Delay1000ms();
+  91   2              Delay1000ms();
+  92   2              Delay1000ms();
+  93   2              Delay1000ms();
+  94   2          };
+  95   1      }
+  96          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     91    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

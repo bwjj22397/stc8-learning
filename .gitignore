@@ -1,0 +1,20 @@
+# ===== Keil uVision 编译/临时产物 =====
+Objects/
+Listings/
+*.uvguix.*
+*.uvgui.*
+*.plg
+*.bak
+*.dep
+*.lnp
+*.lst
+*.obj
+*.m51
+*.build_log.htm
+*.scvd
+
+# ===== 系统文件 =====
+Thumbs.db
+Desktop.ini
+
+# 注意：*.hex 不忽略——保留烧录文件，换电脑可直接用 STC-ISP 烧录

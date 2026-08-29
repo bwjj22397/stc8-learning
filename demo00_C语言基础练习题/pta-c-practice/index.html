@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C语言刷题本 · 本地离线刷题</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- 界面库与判题引擎全部内置于 vendor/（离线可用，无需联网、无需安装任何环境） -->
+    <link rel="stylesheet" href="vendor/codemirror.min.css">
+    <link rel="stylesheet" href="vendor/material-darker.min.css">
+</head>
+<body data-theme="light">
+    <header class="topbar" id="topbar">
+        <a class="brand" href="#/problems" title="回到题库">
+            <svg class="brand-logo" viewBox="0 0 24 24" aria-hidden="true">
+                <rect width="24" height="24" rx="6" fill="#FFA116"/>
+                <path d="M9.2 7.4 5.6 12l3.6 4.6M14.8 7.4 18.4 12l-3.6 4.6"
+                      fill="none" stroke="#FFFFFF" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="brand-name">C语言刷题本</span>
+            <small>本地离线刷题集 · 38 题</small>
+        </a>
+        <nav class="nav">
+            <a href="#/problems">题库</a>
+            <a href="#/progress">进度</a>
+        </nav>
+        <button id="theme-btn" class="icon-btn" type="button" title="切换深浅主题">🌙</button>
+    </header>
+    <main id="app"></main>
+
+        <button id="back-top" type="button" title="回到顶部">↑</button>
+
+    <script src="vendor/marked.min.js"></script>
+    <script src="vendor/purify.min.js"></script>
+    <script src="vendor/codemirror.min.js"></script>
+    <script src="vendor/clike.min.js"></script>
+    <script src="vendor/javascript.min.js"></script>
+    <script src="vendor/python.min.js"></script>
+
+    <script src="vendor/jscpp.engine.js"></script>
+    <script src="vendor/pyodide.engine.js"></script>
+
+    <script src="js/storage.js"></script>
+    <script src="js/questions.js"></script>
+    <script src="js/solutions-extra.js"></script>
+    <script src="js/judge.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

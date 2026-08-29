@@ -17,4 +17,7 @@ Listings/
 Thumbs.db
 Desktop.ini
 
+# ===== 编辑器日志 =====
+keil-assistant.log
+
 # 注意：*.hex 不忽略——保留烧录文件，换电脑可直接用 STC-ISP 烧录

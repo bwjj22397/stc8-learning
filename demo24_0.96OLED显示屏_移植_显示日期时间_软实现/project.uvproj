@@ -467,14 +467,19 @@
               <FilePath>.\Exti_Isr.c</FilePath>
             </File>
             <File>
-              <FileName>oled.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\oled\oled.c</FilePath>
-            </File>
-            <File>
               <FileName>Soft_I2C.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Soft_I2C.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>oled</GroupName>
+          <Files>
+            <File>
+              <FileName>oled.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\oled\oled.c</FilePath>
             </File>
           </Files>
         </Group>

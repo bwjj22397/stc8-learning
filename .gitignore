@@ -22,3 +22,7 @@ Desktop.ini
 *.log.lock
 
 # 注意：*.hex 不忽略——保留烧录文件，换电脑可直接用 STC-ISP 烧录
+
+# ===== 迁移新增 =====
+.vscode/
+stc8-learning/

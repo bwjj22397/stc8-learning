@@ -1,17 +1,17 @@
 #include "oled.h"
 
 
-void delay_ms(unsigned int ms)
-{                         
-	unsigned int a;
-	while(ms)
-	{
-		a=1800;
-		while(a--);
-		ms--;
-	}
-	return;
-}
+//void delay_ms(unsigned int ms)
+//{                         
+//	unsigned int a;
+//	while(ms)
+//	{
+//		a=1800;
+//		while(a--);
+//		ms--;
+//	}
+//	return;
+//}
 
 //·´ÏÔº¯Êý
 void OLED_ColorTurn(u8 i)
@@ -357,8 +357,8 @@ void OLED_ShowNum(u8 x,u8 y,float num1,u8 len)
 //OLEDµÄ³õÊ¼»¯
 void OLED_Init(void)
 {
-	OLED_CS_Set();
-	OLED_ROM_CS_Set();
+	OLED_CS_Set();     // ÆÁÄ»Ð¾Æ¬
+	OLED_ROM_CS_Set(); // ×Ö¿âÐ¾Æ¬
 	delay_ms(200);
 	
 	OLED_WR_Byte(0xAE,OLED_CMD);//--turn off oled panel

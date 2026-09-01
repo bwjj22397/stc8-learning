@@ -2,13 +2,14 @@
 #define __OLED_H
 
 #include "Config.h"
+#include "delay.h"
 
-sbit OLED_SCL=P5^0;    //SCLK
-sbit OLED_SDA=P1^3;    //MOSI
-sbit OLED_DC=P1^6; 
-sbit OLED_CS=P4^7;
-sbit OLED_READ_FS0=P1^1;//MISO
-sbit OLED_ROM_CS=P1^0;  //CS2
+sbit OLED_SCL=P5^0;   // SCLK
+sbit OLED_SDA=P1^3;   // MOSI
+sbit OLED_DC=P1^6;      
+sbit OLED_CS=P4^7;      
+sbit OLED_READ_FS0=P1^1; // MISO
+sbit OLED_ROM_CS=P1^0;
 
 #define u8  unsigned char
 #define u32 unsigned long
@@ -30,7 +31,7 @@ sbit OLED_ROM_CS=P1^0;  //CS2
 #define OLED_ROM_CS_Set()    OLED_ROM_CS=1;
 #define OLED_ROM_CS_Clr()    OLED_ROM_CS=0;
 
-void delay_ms(unsigned int ms);
+//void delay_ms(unsigned int ms);
 void OLED_ColorTurn(u8 i);
 void OLED_DisplayTurn(u8 i);
 void OLED_WR_Byte(u8 dat,u8 cmd);

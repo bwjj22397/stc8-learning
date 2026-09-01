@@ -7,10 +7,10 @@
 
   <Targets>
     <Target>
-      <TargetName>Target 1</TargetName>
+      <TargetName>Target_1</TargetName>
       <ToolsetNumber>0x0</ToolsetNumber>
       <ToolsetName>MCS-51</ToolsetName>
-      <uAC6>8</uAC6>
+      <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
           <Device>STC8H8K64U Series</Device>
@@ -46,7 +46,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\Objects\</OutputDirectory>
-          <OutputName>LED</OutputName>
+          <OutputName>project</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
@@ -324,7 +324,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\OLED</IncludePath>
+              <IncludePath>.\Driver;.\Driver\OLED;.\Lib</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>
@@ -381,10 +381,50 @@
               <FileType>1</FileType>
               <FilePath>.\main.c</FilePath>
             </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Lib</GroupName>
+          <Files>
+            <File>
+              <FileName>Delay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Lib\Delay.c</FilePath>
+            </File>
+            <File>
+              <FileName>GPIO.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Lib\GPIO.c</FilePath>
+            </File>
+            <File>
+              <FileName>GPIO_Isr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Lib\GPIO_Isr.c</FilePath>
+            </File>
+            <File>
+              <FileName>NVIC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Lib\NVIC.c</FilePath>
+            </File>
+            <File>
+              <FileName>UART.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Lib\UART.c</FilePath>
+            </File>
+            <File>
+              <FileName>UART_Isr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Lib\UART_Isr.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Driver</GroupName>
+          <Files>
             <File>
               <FileName>oled.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\OLED\oled.c</FilePath>
+              <FilePath>.\Driver\OLED\oled.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -59,7 +59,13 @@
         terminal: '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>',
         checkSquare: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
         code: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
-        zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>'
+        zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+        cloud: '<path d="M12 13v8M8 17l4 4 4-4"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>',
+        gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+        star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+        maximize: '<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>',
+        chevronUp: '<path d="M18 15l-6-6-6 6"/>',
+        calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'
     };
     function ic(name, size) {
         size = size || 16;
@@ -218,6 +224,7 @@
                     indentUnit: 4
                 });
                 cm._kind = 'cm';
+                applyEditorSettings(cm);
                 setTimeout(function () { try { cm.refresh(); } catch (e) { } }, 0);
                 return cm;
             } catch (e) { /* 降级 */ }
@@ -295,6 +302,52 @@
     function getQuestion(id) {
         for (var i = 0; i < BANK.length; i++) if (BANK[i].id === id) return BANK[i];
         return null;
+    }
+
+    /* ---------- 收藏 / 编辑器设置 / 布局持久化 ---------- */
+    function getFavs() {
+        var f = STORE.get('favorites', []);
+        return Array.isArray(f) ? f : [];
+    }
+    function isFav(id) { return getFavs().indexOf(id) >= 0; }
+    function toggleFav(id) {
+        var f = getFavs();
+        var i = f.indexOf(id);
+        if (i >= 0) f.splice(i, 1); else f.push(id);
+        STORE.set('favorites', f);
+        return i < 0;
+    }
+
+    var SETTINGS = null;
+    function getSettings() {
+        if (!SETTINGS) {
+            SETTINGS = STORE.get('settings', {}) || {};
+            if (typeof SETTINGS.fontSize !== 'number') SETTINGS.fontSize = 13.5;
+            if (SETTINGS.tab !== 2 && SETTINGS.tab !== 4) SETTINGS.tab = 4;
+            SETTINGS.wrap = !!SETTINGS.wrap;
+        }
+        return SETTINGS;
+    }
+    function saveSettings() { STORE.set('settings', SETTINGS); }
+
+    function applyEditorSettings(cm) {
+        if (!cm || cm._kind !== 'cm') return;
+        try {
+            cm.getWrapperElement().style.fontSize = getSettings().fontSize + 'px';
+            cm.setOption('indentUnit', getSettings().tab);
+            cm.setOption('tabSize', getSettings().tab);
+            cm.setOption('lineWrapping', getSettings().wrap);
+            cm.refresh();
+        } catch (e) { /* 忽略 */ }
+    }
+
+    function getLayout() {
+        return STORE.get('layout', {}) || {};
+    }
+    function saveLayout(patch) {
+        var l = getLayout();
+        Object.keys(patch).forEach(function (k) { l[k] = patch[k]; });
+        STORE.set('layout', l);
     }
 
     /* ============================================================
@@ -415,9 +468,9 @@
     }
 
     /* ============================================================
-     * 列表页
+     * 列表页（力扣题库式：左侧栏 + 胶囊筛选 + 44px 斑马纹行）
      * ============================================================ */
-    var filters = { search: '', difficulty: 'all', status: 'all', tag: 'all' };
+    var filters = { search: '', difficulty: 'all', status: 'all', tag: 'all', sort: 'default', fav: false };
     var searchTimer = null;
 
     function allTags() {
@@ -443,48 +496,119 @@
 
     function filteredList() {
         var kw = filters.search.trim().toLowerCase();
-        return BANK.filter(function (q) {
+        var list = BANK.filter(function (q) {
             if (filters.difficulty !== 'all' && q.difficulty !== filters.difficulty) return false;
             if (filters.tag !== 'all' && (q.tags || []).indexOf(filters.tag) < 0) return false;
+            if (filters.fav && !isFav(q.id)) return false;
             var p = STORE.getProgressOf(q.id);
             var st = (p && p.status) || 'none';
             if (filters.status !== 'all' && st !== filters.status) return false;
             if (kw && (String(q.code) + ' ' + q.title).toLowerCase().indexOf(kw) < 0) return false;
             return true;
         });
+        if (filters.sort === 'diff-asc') {
+            list.sort(function (a, b) { return DIFF_ORDER.indexOf(a.difficulty) - DIFF_ORDER.indexOf(b.difficulty) || a.id - b.id; });
+        } else if (filters.sort === 'diff-desc') {
+            list.sort(function (a, b) { return DIFF_ORDER.indexOf(b.difficulty) - DIFF_ORDER.indexOf(a.difficulty) || a.id - b.id; });
+        }
+        return list;
+    }
+
+    /* 难度条形图：5 根小竖条，按难度点亮 1/3/5 根 */
+    function diffBars(d) {
+        var lit = { easy: 1, medium: 3, hard: 5 }[d] || 0;
+        var s = '<span class="dbars dbars-' + d + '">';
+        for (var i = 1; i <= 5; i++) s += '<i' + (i <= lit ? ' class="on"' : '') + '></i>';
+        return s + '</span>';
+    }
+
+    /* 每日一题：按日期稳定轮换 */
+    function dailyPick() {
+        var day = Math.floor(Date.now() / 86400000);
+        return BANK[day % BANK.length];
     }
 
     function renderList() {
         var stat = progressStats();
         var solvedAll = stat.easy[0] + stat.medium[0] + stat.hard[0];
-        var wrap = h('div', 'page');
-        wrap.innerHTML =
-            '<div class="page-head"><h1>题库</h1>' +
-            '<div class="stat-line">已解决 <b>' + solvedAll + '</b> / ' + BANK.length + ' 题' +
-            ' · 简单 ' + stat.easy[0] + '/' + stat.easy[1] +
-            ' · 中等 ' + stat.medium[0] + '/' + stat.medium[1] +
-            ' · 困难 ' + stat.hard[0] + '/' + stat.hard[1] + '</div></div>' +
-            '<div class="toolbar">' +
-            '<input id="f-search" class="input search" type="text" placeholder="搜索题号或标题…" />' +
-            '<span id="f-dd-slot"></span>' +
-            '</div>' +
-            '<div class="table-card"><table class="table"><thead><tr>' +
-            '<th class="col-st">状态</th><th class="col-code">题号</th><th>题目</th>' +
-            '<th class="col-diff">难度</th><th class="col-tags">标签</th><th class="col-score">分值</th>' +
-            '</tr></thead><tbody id="list-body"></tbody></table></div>' +
-            '<p class="src-note">题面为学习改写版，仅用于本地离线练习。</p>';
+        var wrap = h('div', 'page list-page');
 
-        var toolbar = $('.toolbar', wrap);
-        var ddDiff = createDropdown({
-            value: filters.difficulty,
-            options: [
-                { value: 'all', label: '全部难度' },
-                { value: 'easy', label: '简单', dot: 'easy' },
-                { value: 'medium', label: '中等', dot: 'medium' },
-                { value: 'hard', label: '困难', dot: 'hard' }
-            ],
-            onChange: function (v) { filters.difficulty = v; renderRows(); }
+        wrap.innerHTML =
+            '<aside class="side-col">' +
+            '  <nav class="side-card side-menu">' +
+            '    <a class="side-item active" href="#/problems">' + ic('code', 17) + '<span>题目</span></a>' +
+            '    <a class="side-item" href="#/progress">' + ic('checkSquare', 17) + '<span>进度</span></a>' +
+            '  </nav>' +
+            '  <div class="side-card" id="side-progress"></div>' +
+            '  <div class="side-card side-daily" id="side-daily"></div>' +
+            '</aside>' +
+            '<div class="main-col">' +
+            '  <div class="pill-row" id="pill-row"></div>' +
+            '  <div class="toolbar">' +
+            '    <input id="f-search" class="input search" type="text" placeholder="搜索题目" />' +
+            '    <span id="f-dd-slot" class="dd-slot"></span>' +
+            '    <span class="spacer"></span>' +
+            '    <span class="stat-line tool-stat">已解决 <b>' + solvedAll + '</b> / ' + BANK.length + ' 题</span>' +
+            '  </div>' +
+            '  <div class="table-card lc-list"><div id="list-body"></div></div>' +
+            '  <p class="src-note">题面为学习改写版，仅用于本地离线练习。</p>' +
+            '</div>';
+
+        /* ---- 左侧栏：进度卡 + 每日一题卡 ---- */
+        var sideProgress = $('#side-progress', wrap);
+        sideProgress.innerHTML =
+            '<div class="sp-head">做题进度</div>' +
+            '<div class="sp-all"><b>' + solvedAll + '</b> / ' + BANK.length + ' <span>已解决</span></div>';
+        DIFF_ORDER.forEach(function (d) {
+            var done = stat[d][0], total = stat[d][1];
+            var pct = total ? Math.round(done / total * 100) : 0;
+            sideProgress.appendChild(h('div', 'sp-row',
+                '<span class="sp-name diff-' + d + '">' + DIFF_LABEL[d] + '</span>' +
+                '<span class="sp-track"><i class="sp-fill sp-fill-' + d + '" style="width:' + pct + '%"></i></span>' +
+                '<span class="sp-num">' + done + '/' + total + '</span>'));
         });
+
+        var dq = dailyPick();
+        var dp = STORE.getProgressOf(dq.id);
+        var sideDaily = $('#side-daily', wrap);
+        sideDaily.innerHTML =
+            '<div class="sp-head">' + ic('calendar', 14) + ' 每日一题 <span class="sp-date">' +
+            (new Date().getMonth() + 1) + '月' + new Date().getDate() + '日</span></div>';
+        var drow = h('button', 'lc-row daily-row');
+        drow.type = 'button';
+        drow.innerHTML =
+            statusIcon(dp) +
+            '<span class="lc-no">' + esc(dq.code) + '.</span>' +
+            '<span class="lc-title">' + esc(dq.title) + '</span>' +
+            '<span class="diff diff-' + dq.difficulty + ' diff-plain">' + DIFF_LABEL[dq.difficulty] + '</span>';
+        drow.addEventListener('click', function () { location.hash = '#/problem/' + dq.id; });
+        sideDaily.appendChild(drow);
+
+        /* ---- 分类胶囊（难度单选） ---- */
+        var pillRow = $('#pill-row', wrap);
+        var pillDefs = [
+            { d: 'all', label: '全部题目' },
+            { d: 'easy', label: '简单' },
+            { d: 'medium', label: '中等' },
+            { d: 'hard', label: '困难' }
+        ];
+        function renderPills() {
+            pillRow.innerHTML = '';
+            pillDefs.forEach(function (pd) {
+                var b = h('button', 'pill' + (filters.difficulty === pd.d ? ' pill-dark' : ''), esc(pd.label));
+                b.type = 'button';
+                b.addEventListener('click', function () {
+                    filters.difficulty = pd.d;
+                    renderPills();
+                    renderRows();
+                });
+                pillRow.appendChild(b);
+            });
+        }
+        renderPills();
+
+        /* ---- 工具行：搜索 + 状态/标签/排序下拉 + 收藏筛选 ---- */
+        var toolbar = $('.toolbar', wrap);
         var ddStatus = createDropdown({
             value: filters.status,
             options: [
@@ -500,9 +624,28 @@
             options: [{ value: 'all', label: '全部标签' }].concat(allTags().map(function (t) { return { value: t, label: t }; })),
             onChange: function (v) { filters.tag = v; renderRows(); }
         });
-        toolbar.appendChild(ddDiff);
-        toolbar.appendChild(ddStatus);
-        toolbar.appendChild(ddTag);
+        var ddSort = createDropdown({
+            value: filters.sort,
+            options: [
+                { value: 'default', label: '默认排序' },
+                { value: 'diff-asc', label: '难度：简单 → 困难' },
+                { value: 'diff-desc', label: '难度：困难 → 简单' }
+            ],
+            onChange: function (v) { filters.sort = v; renderRows(); }
+        });
+        var favBtn = h('button', 'icon-btn fav-filter' + (filters.fav ? ' on' : ''), ic('star', 16));
+        favBtn.type = 'button';
+        favBtn.title = '只看收藏';
+        favBtn.addEventListener('click', function () {
+            filters.fav = !filters.fav;
+            favBtn.classList.toggle('on', filters.fav);
+            renderRows();
+        });
+        var ddSlot = $('#f-dd-slot', wrap);
+        ddSlot.appendChild(ddStatus);
+        ddSlot.appendChild(ddTag);
+        ddSlot.appendChild(ddSort);
+        toolbar.insertBefore(favBtn, $('.spacer', toolbar));
 
         var search = $('#f-search', wrap);
         search.value = filters.search;
@@ -511,7 +654,7 @@
             searchTimer = setTimeout(function () {
                 filters.search = search.value;
                 renderRows();
-            }, 300);
+            }, 200);
         });
 
         function renderRows() {
@@ -519,25 +662,35 @@
             var list = filteredList();
             body.innerHTML = '';
             if (!list.length) {
-                body.innerHTML = '<tr><td colspan="6" class="empty">没有符合条件的题目</td></tr>';
+                body.appendChild(h('div', 'empty', filters.fav && !getFavs().length
+                    ? '还没有收藏的题目：把鼠标移到题目行上，点亮行尾的星标即可收藏'
+                    : '没有符合条件的题目'));
                 return;
             }
             list.forEach(function (q) {
                 var p = STORE.getProgressOf(q.id);
-                var tr = document.createElement('tr');
-                tr.className = 'row-link';
-                tr.innerHTML =
-                    '<td>' + statusIcon(p) + '</td>' +
-                    '<td class="col-code">' + esc(q.code) + '</td>' +
-                    '<td><a class="title-link" href="#/problem/' + q.id + '">' + esc(q.title) + '</a></td>' +
-                    '<td class="col-diff">' + diffBadge(q.difficulty) + '</td>' +
-                    '<td class="col-tags">' + (q.tags || []).map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join(' ') + '</td>' +
-                    '<td class="col-score">' + q.score + '</td>';
-                tr.addEventListener('click', function (ev) {
-                    if (ev.target.tagName === 'A') return;
+                var fav = isFav(q.id);
+                var row = h('button', 'lc-row');
+                row.type = 'button';
+                row.innerHTML =
+                    statusIcon(p) +
+                    '<span class="lc-no">' + esc(q.code) + '.</span>' +
+                    '<span class="lc-title">' + esc(q.title) + '</span>' +
+                    '<span class="lc-score">' + q.score + ' 分</span>' +
+                    '<span class="diff diff-' + q.difficulty + ' diff-plain">' + DIFF_LABEL[q.difficulty] + '</span>' +
+                    diffBars(q.difficulty) +
+                    '<span class="lc-star' + (fav ? ' on' : '') + '" title="' + (fav ? '取消收藏' : '收藏') + '">' +
+                    '<svg width="16" height="16" viewBox="0 0 24 24" fill="' + (fav ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">' + ICON_PATHS.star + '</svg></span>';
+                row.addEventListener('click', function (ev) {
+                    if (ev.target.closest('.lc-star')) {
+                        var on = toggleFav(q.id);
+                        renderRows();
+                        toast(on ? '已收藏「' + q.code + ' ' + q.title + '」' : '已取消收藏', 'info');
+                        return;
+                    }
                     location.hash = '#/problem/' + q.id;
                 });
-                body.appendChild(tr);
+                body.appendChild(row);
             });
         }
         renderRows();
@@ -559,6 +712,7 @@
                 theme: cmTheme(),
                 extraKeys: { 'Ctrl-Enter': function () { /* 由详情页绑定 */ } }
             });
+            applyEditorSettings(cm);
             cm.on('change', onChange);
             cm._kind = 'cm';
             return cm;
@@ -596,8 +750,13 @@
         var myToken = ++runToken;
         var lang = STORE.get('lang', 'c');
         if (lang !== 'c' && lang !== 'cpp' && lang !== 'python') lang = 'c';
-        /* 与力扣一致：重新打开题目默认显示初始模板；历史代码在「提交记录」面板里 */
-        var initialCode = q.langTemplates[lang] || '';
+        /* 草稿自动保存（与力扣一致）：重开题目 / 切换语言都恢复上次写到一半的代码；
+         * 没有草稿时显示初始模板，历史版本在「提交记录」面板里，重置按钮可回到模板 */
+        function draftOf(l) {
+            var d = STORE.loadCode(q.id, l);
+            return (d === null || d === undefined) ? (q.langTemplates[l] || '') : d;
+        }
+        var initialCode = draftOf(lang);
 
         var wrap = h('div', 'page problem-page');
         wrap.innerHTML =
@@ -634,7 +793,9 @@
             '<span>题解</span></button>' +
             '<button class="ltab" data-pane="hist">' +
             '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' +
-            '<span id="hist-tab-label">提交记录（0）</span></button>';
+            '<span id="hist-tab-label">提交记录（0）</span></button>' +
+            '<span class="ltabs-end"><button id="left-collapse" class="icon-btn" title="收起题目面板">' +
+            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button></span>';
         left.appendChild(tabRow);
 
         var descPane = h('div', 'lpane');
@@ -778,8 +939,23 @@
             location.hash = '#/problem/' + r;
         });
 
-        /* ---- 右栏：编辑器窗格 + 测试结果窗格（上下两个窗口，拖动条调高） ---- */
+        /* ---- 右栏：本地判题提示条 + 编辑器窗格 + 测试结果窗格 ---- */
         var right = $('#right-col', wrap);
+        if (!STORE.get('env-bar-dismissed', false)) {
+            var envBar = h('div', 'env-bar');
+            envBar.innerHTML =
+                '<span class="env-bar-ic">ⓘ</span>' +
+                '<span>判题在<b>本地浏览器</b>完成：C / C++ 引擎已内置、完全离线；Python 运行时首次使用需联网下载（之后有缓存）。</span>';
+            var envClose = h('button', 'icon-btn env-close', ic('x', 14));
+            envClose.title = '不再显示';
+            envClose.addEventListener('click', function () {
+                STORE.set('env-bar-dismissed', true);
+                envBar.remove();
+            });
+            envBar.appendChild(envClose);
+            right.appendChild(envBar);
+        }
+
         var toolbar = h('div', 'editor-toolbar');
         toolbar.innerHTML =
             '<span id="lang-slot"></span>' +
@@ -791,8 +967,8 @@
             '<span id="judge-status" class="judge-status"></span>' +
             '<button id="btn-run" class="btn btn-run">' +
             '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4z"/></svg>运行</button>' +
-            '<button id="btn-submit" class="btn btn-primary">' +
-            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M5 12l7-7 7 7"/></svg>提交</button>';
+            '<button id="btn-submit" class="btn btn-submit">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13v8M8 17l4 4 4-4"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>提交</button>';
         right.appendChild(toolbar);
 
         var langDD = createDropdown({
@@ -808,8 +984,21 @@
         langSlot.parentNode.replaceChild(langDD, langSlot);
 
         var editorPane = h('div', 'editor-pane');
+        var editorHead = h('div', 'editor-head');
+        editorHead.innerHTML =
+            '<span class="editor-head-title">' + ic('code', 15) + '代码</span>' +
+            '<span class="spacer"></span>' +
+            '<button id="ed-fs" class="icon-btn" title="编辑器全屏">' + ic('maximize', 15) + '</button>' +
+            '<button id="ed-collapse" class="icon-btn" title="收起编辑器">' + ic('chevronUp', 15) + '</button>';
         var editorHost = h('div', 'editor-host');
+        var editorStatus = h('div', 'editor-status');
+        editorStatus.innerHTML =
+            '<span id="ed-save" class="ed-save">—</span>' +
+            '<span class="spacer"></span>' +
+            '<span id="ed-cursor">行 1, 列 1</span>';
+        editorPane.appendChild(editorHead);
         editorPane.appendChild(editorHost);
+        editorPane.appendChild(editorStatus);
         right.appendChild(editorPane);
 
         var vDivider = h('div', 'v-divider', '');
@@ -834,23 +1023,74 @@
         var tabCases = $('#tab-cases', resultPanel);
         var tabResult = $('#tab-result', resultPanel);
 
-        /* 编辑器（不再自动存草稿：每次运行/提交的代码会自动进入「提交记录」历史） */
+        /* 编辑器：草稿自动保存（每次运行/提交的代码另存进「提交记录」历史） */
         var editor = makeEditor(editorHost, initialCode,
             lang === 'python' ? 'text/x-python' : 'text/x-csrc',
-            function () { /* 无需草稿保存 */ });
+            function () { scheduleDraftSave(); });
         setTimeout(function () { if (editor._kind === 'cm') editor.refresh(); }, 50);
 
+        var saveTimer = null;
+        function nowTime() {
+            return new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        }
+        function setSaveHint(text) {
+            var el = $('#ed-save', editorStatus);
+            if (el) el.textContent = text;
+        }
+        function scheduleDraftSave() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(function () {
+                STORE.saveCode(q.id, lang, editorGetValue(editor));
+                setSaveHint('已存储 ' + nowTime());
+            }, 500);
+        }
+        function flushDraftSave() {
+            clearTimeout(saveTimer);
+            STORE.saveCode(q.id, lang, editorGetValue(editor));
+            setSaveHint('已存储 ' + nowTime());
+        }
+        function updateCursor() {
+            var el = $('#ed-cursor', editorStatus);
+            if (!el) return;
+            if (editor._kind === 'cm') {
+                var c = editor.getCursor();
+                el.textContent = '行 ' + (c.line + 1) + ', 列 ' + (c.ch + 1);
+            } else {
+                var pos = editor.selectionStart || 0;
+                var before = editor.value.slice(0, pos).split('\n');
+                el.textContent = '行 ' + before.length + ', 列 ' + (before[before.length - 1].length + 1);
+            }
+        }
+        if (editor._kind === 'cm') {
+            editor.on('cursorActivity', updateCursor);
+        } else {
+            editor.addEventListener('input', updateCursor);
+            editor.addEventListener('click', updateCursor);
+        }
+        updateCursor();
+        /* 首次打开就存一份模板草稿，保证「已存储」状态真实 */
+        STORE.saveCode(q.id, lang, initialCode);
+        setSaveHint('已存储 ' + nowTime());
+
         function setLang(l) {
+            if (l === lang) return;
+            /* 切语言前先把当前内容存回原语言的草稿，再载入目标语言草稿 */
+            STORE.saveCode(q.id, lang, editorGetValue(editor));
             lang = l;
             STORE.set('lang', l);
             editorSetMode(editor, langMode(l));
-            editorSetValue(editor, q.langTemplates[l] || '');
+            editorSetValue(editor, draftOf(l));
+            flushDraftSave();
+            updateCursor();
         }
 
         $('#btn-reset', toolbar).addEventListener('click', function () {
             confirmDialog('确定要把代码恢复为本题初始模板吗？当前编辑器内容会被覆盖。').then(function (yes) {
                 if (!yes) return;
+                STORE.resetCode(q.id, lang);
                 editorSetValue(editor, q.langTemplates[lang] || '');
+                STORE.saveCode(q.id, lang, editorGetValue(editor));
+                setSaveHint('已重置为模板');
                 toast('代码已重置为模板');
             });
         });
@@ -1114,18 +1354,10 @@
             var rcBody = h('div', 'rc-body');
             tabResult.appendChild(rcBody);
             renderResultBody(rcBody);
-
-            /* 底部：贡献测试用例（本地版占位） */
-            var foot = h('button', 'rc-contribute');
-            foot.type = 'button';
-            foot.innerHTML = ic('heart', 16) + '<span>贡献测试用例</span>';
-            foot.addEventListener('click', function () {
-                toast('感谢支持！本地离线版暂不支持上传用例', 'info');
-            });
-            tabResult.appendChild(foot);
         }
 
         function runCases(cases, mode) {
+            flushDraftSave();
             consoleLines = [];
             $('#console-out', resultPanel).textContent = '';
             var codeAtStart = editorGetValue(editor);
@@ -1143,7 +1375,7 @@
 
             /* 展开结果面板并切到「测试结果」Tab（仿力扣） */
             resultPanel.classList.remove('collapsed');
-            editorPane.style.flex = '0 0 ' + lastVPct + '%';
+            applyVertical();
             if (editor._kind === 'cm') editor.refresh();
             switchTab('result');
             renderResult();
@@ -1365,47 +1597,142 @@
         }
         renderHistoryTab();
 
+        /* ==========================================================
+         * 布局：拖拽调宽调高 + 收起/全屏 + 状态持久化（刷新后保持）
+         * ========================================================== */
+        var splitEl = $('.split', wrap);
+        var layout = getLayout();
+        var lastVPct = (typeof layout.vpct === 'number' ? Math.min(80, Math.max(20, layout.vpct)) : 60);
+        var lastLPct = (typeof layout.lpct === 'number' ? Math.min(75, Math.max(20, layout.lpct)) : 45);
+        var edCollapsed = !!layout.edCollapsed;
+        var leftCollapsed = !!layout.leftCollapsed;
+        var edFs = false;
+
+        /* 左栏收起后显示的竖条恢复按钮 */
+        var leftRestore = h('button', 'left-restore', '›');
+        leftRestore.type = 'button';
+        leftRestore.title = '展开题目面板';
+        wrap.appendChild(leftRestore);
+
+        function applyHLayout() {
+            $('#left-col', wrap).style.width = lastLPct + '%';
+            $('#right-col', wrap).style.width = (100 - lastLPct) + '%';
+        }
+        function applyVertical() {
+            vDivider.style.display = edCollapsed ? 'none' : '';
+            if (edCollapsed) {
+                editorPane.style.flex = '0 0 auto';
+            } else if (resultPanel.classList.contains('collapsed')) {
+                editorPane.style.flex = '1 1 auto';
+            } else {
+                editorPane.style.flex = '0 0 ' + lastVPct + '%';
+            }
+        }
+        function applyEdCollapse() {
+            editorPane.classList.toggle('collapsed', edCollapsed);
+            right.classList.toggle('ed-collapsed', edCollapsed);
+            $('#ed-collapse', editorHead).title = edCollapsed ? '展开编辑器' : '收起编辑器';
+            applyVertical();
+            if (editor._kind === 'cm') editor.refresh();
+        }
+        function applyLeftCollapse() {
+            splitEl.classList.toggle('left-collapsed', leftCollapsed);
+            if (!leftCollapsed) applyHLayout();
+            if (editor._kind === 'cm') editor.refresh();
+        }
+        function applyEdFs() {
+            wrap.classList.toggle('ed-fs', edFs);
+            $('#ed-fs', editorHead).title = edFs ? '退出全屏（Esc）' : '编辑器全屏';
+            if (editor._kind === 'cm') editor.refresh();
+        }
+
+        applyHLayout();
+        applyVertical();
+        applyEdCollapse();
+        applyLeftCollapse();
+
         /* 左右栏拖拽调宽 */
         var divider = $('#divider', wrap);
         var dragging = false;
         divider.addEventListener('mousedown', function (ev) { ev.preventDefault(); dragging = true; document.body.classList.add('dragging'); });
         window.addEventListener('mousemove', function (ev) {
             if (!dragging) return;
-            var split = $('.split', wrap);
-            var rect = split.getBoundingClientRect();
-            var pct = Math.min(75, Math.max(20, ((ev.clientX - rect.left) / rect.width) * 100));
-            $('#left-col', wrap).style.width = pct + '%';
-            $('#right-col', wrap).style.width = (100 - pct) + '%';
+            var rect = splitEl.getBoundingClientRect();
+            lastLPct = Math.min(75, Math.max(20, ((ev.clientX - rect.left) / rect.width) * 100));
+            applyHLayout();
         });
         window.addEventListener('mouseup', function () {
-            if (dragging) { dragging = false; document.body.classList.remove('dragging'); }
+            if (!dragging) return;
+            dragging = false;
+            document.body.classList.remove('dragging');
+            saveLayout({ lpct: lastLPct });
+            if (editor._kind === 'cm') editor.refresh();
         });
 
         /* 编辑器 / 测试结果 拖拽调高 */
-        var lastVPct = 60;
         var vDragging = false;
         vDivider.addEventListener('mousedown', function (ev) { ev.preventDefault(); vDragging = true; document.body.classList.add('dragging'); });
         window.addEventListener('mousemove', function (ev) {
             if (!vDragging) return;
             var rc = right.getBoundingClientRect();
-            var pct = Math.min(80, Math.max(20, ((ev.clientY - rc.top) / rc.height) * 100));
-            lastVPct = pct;
-            editorPane.style.flex = '0 0 ' + pct + '%';
-            if (editor._kind === 'cm') editor.refresh();
+            lastVPct = Math.min(80, Math.max(20, ((ev.clientY - rc.top) / rc.height) * 100));
+            applyVertical();
         });
         window.addEventListener('mouseup', function () {
             if (!vDragging) return;
             vDragging = false;
             document.body.classList.remove('dragging');
+            saveLayout({ vpct: lastVPct });
             if (editor._kind === 'cm') editor.refresh();
         });
 
         /* 结果面板收起 / 展开 */
         $('#console-toggle', resultPanel).addEventListener('click', function () {
-            var collapsed = resultPanel.classList.toggle('collapsed');
-            if (collapsed) editorPane.style.flex = '1 1 auto';
-            else editorPane.style.flex = '0 0 ' + lastVPct + '%';
+            resultPanel.classList.toggle('collapsed');
+            applyVertical();
             if (editor._kind === 'cm') editor.refresh();
+        });
+
+        /* 编辑器收起 / 展开 */
+        $('#ed-collapse', editorHead).addEventListener('click', function () {
+            edCollapsed = !edCollapsed;
+            saveLayout({ edCollapsed: edCollapsed });
+            applyEdCollapse();
+        });
+
+        /* 编辑器全屏（Esc 退出） */
+        function toggleEdFs() {
+            edFs = !edFs;
+            applyEdFs();
+        }
+        $('#ed-fs', editorHead).addEventListener('click', toggleEdFs);
+
+        /* 左栏收起 / 展开 */
+        $('#left-collapse', tabRow).addEventListener('click', function () {
+            leftCollapsed = true;
+            saveLayout({ leftCollapsed: leftCollapsed });
+            applyLeftCollapse();
+        });
+        leftRestore.addEventListener('click', function () {
+            leftCollapsed = false;
+            saveLayout({ leftCollapsed: leftCollapsed });
+            applyLeftCollapse();
+        });
+
+        /* 全局快捷键：Ctrl+Enter 运行（不限焦点）、Esc 退出全屏并收起下拉 */
+        document.addEventListener('keydown', function onDocKey(ev) {
+            if (myToken !== runToken) {   // 已切到别的题目/页面，注销自己
+                document.removeEventListener('keydown', onDocKey);
+                return;
+            }
+            if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') {
+                ev.preventDefault();
+                var b = $('#btn-run', toolbar);
+                if (b && !b.disabled) b.click();
+            } else if (ev.key === 'Escape') {
+                if (edFs) toggleEdFs();
+                else closeAllDropdowns();
+            }
         });
 
         return wrap;
@@ -1456,6 +1783,67 @@
         return wrap;
     }
 
+    /* ---------- 设置弹窗（编辑器字号 / Tab 宽度 / 自动换行） ---------- */
+    function applyAllEditors() {
+        document.querySelectorAll('.CodeMirror').forEach(function (el) {
+            if (el.CodeMirror) applyEditorSettings(el.CodeMirror);
+        });
+    }
+    function openSettingsModal() {
+        var s = getSettings();
+        var overlay = h('div', 'overlay');
+        var panel = h('div', 'dialog settings-dialog');
+        panel.innerHTML =
+            '<div class="settings-title">' + ic('gear', 16) + '设置</div>' +
+            '<div class="settings-note">设置保存在本机浏览器，对所有题目生效。</div>';
+
+        function makeRow(label, control) {
+            var row = h('div', 'set-row');
+            row.appendChild(h('span', 'set-label', esc(label)));
+            row.appendChild(control);
+            return row;
+        }
+        var ddFont = createDropdown({
+            value: String(s.fontSize),
+            options: ['12', '13', '13.5', '15', '17'].map(function (v) { return { value: v, label: v + ' px' }; }),
+            onChange: function (v) { s.fontSize = parseFloat(v); saveSettings(); applyAllEditors(); }
+        });
+        var ddTab = createDropdown({
+            value: String(s.tab),
+            options: [{ value: '2', label: '2 个空格' }, { value: '4', label: '4 个空格' }],
+            onChange: function (v) { s.tab = parseInt(v, 10); saveSettings(); applyAllEditors(); }
+        });
+        var wrapSwitch = h('button', 'switch' + (s.wrap ? ' on' : ''));
+        wrapSwitch.type = 'button';
+        wrapSwitch.title = '过长代码行是否自动折行';
+        wrapSwitch.addEventListener('click', function () {
+            s.wrap = !s.wrap;
+            wrapSwitch.classList.toggle('on', s.wrap);
+            saveSettings();
+            applyAllEditors();
+        });
+        panel.appendChild(makeRow('代码字体大小', ddFont));
+        panel.appendChild(makeRow('Tab 缩进宽度', ddTab));
+        panel.appendChild(makeRow('自动换行', wrapSwitch));
+
+        var rowBtns = h('div', 'dialog-row');
+        var done = h('button', 'btn btn-primary', '完成');
+        done.type = 'button';
+        done.addEventListener('click', function () { overlay.remove(); });
+        rowBtns.appendChild(done);
+        panel.appendChild(rowBtns);
+
+        overlay.appendChild(panel);
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', function (ev) { if (ev.target === overlay) overlay.remove(); });
+        document.addEventListener('keydown', function onKey(ev) {
+            if (ev.key === 'Escape') {
+                overlay.remove();
+                document.removeEventListener('keydown', onKey);
+            }
+        });
+    }
+
     /* ============================================================
      * 主题与路由
      * ============================================================ */
@@ -1499,6 +1887,8 @@
             applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark');
             route();   // 重建页面以同步编辑器主题等
         });
+        var gear = $('#settings-btn');
+        if (gear) gear.addEventListener('click', openSettingsModal);
         document.addEventListener('store-error', function (ev) {
             toast(ev.detail || '存储异常', 'warn');
         });

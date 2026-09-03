@@ -477,14 +477,19 @@
               <FilePath>.\Driver\OLED\oled.c</FilePath>
             </File>
             <File>
+              <FileName>MatrixKey.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\MatrixKey.h</FilePath>
+            </File>
+            <File>
               <FileName>MatrixKey.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Driver\MatrixKey.c</FilePath>
             </File>
             <File>
-              <FileName>MatrixKey.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Driver\MatrixKey.h</FilePath>
+              <FileName>Keys.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Keys.c</FilePath>
             </File>
           </Files>
         </Group>

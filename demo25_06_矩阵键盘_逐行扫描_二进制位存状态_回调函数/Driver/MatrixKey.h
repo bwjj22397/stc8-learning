@@ -30,9 +30,10 @@
 #define UP      1
 #define DOWN    0
 
+typedef void (* MK_CallBack)(u8, u8, u8);
 
 void MK_init(void);
-void MK_key_state(void);
+void MK_key_state(MK_CallBack callback);
 
 
 #endif

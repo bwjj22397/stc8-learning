@@ -3,15 +3,9 @@
 #include "UART.h"
 #include "NVIC.h"
 #include "Switch.h"
-#include "Timer.h"
 #include "Delay.h"
-#include "ADC.h"
-#include "STC8H_PWM.h"
-#include "I2C.h"
-#include "Exti.h"
-#include "MatrixKey.h"
-
-
+#include "MATRIXKEY.h"
+#include "Keys.h"
 
 void GPIO_config(void) {
     GPIO_InitTypeDef    GPIO_InitStructure;
@@ -34,19 +28,55 @@ void UART_config(void) {
     UART1_SW(UART1_SW_P30_P31);     // 引脚选择, UART1_SW_P30_P31,UART1_SW_P36_P37,UART1_SW_P16_P17,UART1_SW_P43_P44
 }
 
+void KEY_scan(u8 row, u8 col, u8 state) {
+    static u8 position;
+    position = row * COL_NUM + col + 1;
+    if(state) {
+        printf("key%d %d行%d列 抬起\n",(int)(row * COL_NUM + col + 1), (int)(row + 1), (int)(col + 1));
+    } else {
+        printf("key%d %d行%d列 按下\n",(int)(row * COL_NUM + col + 1), (int)(row + 1), (int)(col + 1));
+    }
+}
+
+u8 Light_P53 = 1;
+
+void Keys_on_keyup(u8 key_index) {
+    printf("key%d 抬起\n", (int)key_index);
+}
+void Keys_on_keydown(u8 key_index) {
+    printf("key%d 按下\n", (int)key_index);
+    if(key_index == 0) {
+        Light_P53 = 1;
+    } else if(key_index == 2) {
+        Light_P53 = 0;
+    }
+}
+
 int main(void) {
 
     EAXSFR();
 
     GPIO_config();
     UART_config();
-    MatrixKey_init();
+    MK_init();
+    Keys_init();
 
     EA = 1;
+    
+    printf("init commit\n");
 
     while (1) {
-        MatrixKey_scan();
-
+        // 4x4矩阵按钮扫描
+        MK_key_state(KEY_scan);
+        
+        
+        // P53按钮和灯复用
+        P5_MODE_IN_HIZ(GPIO_Pin_3);
+        P5_PULL_UP_ENABLE(GPIO_Pin_3);
+        Keys_scan();
+        
+        P5_MODE_OUT_PP(GPIO_Pin_3);
+        P53 = Light_P53;
 
         delay_ms(10);
     }

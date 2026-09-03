@@ -685,6 +685,11 @@ class CRuntime {
         if (this.isTypeEqualTo(value.t, type)) {
             return value;
         }
+        if (type.type === "primitive" && type.name === "bool" && value.t && this.isPointerType(value.t)) {
+            const __tgt = value.v.target;
+            const __isNull = (__tgt === null || __tgt === this.nullPointerValue);
+            return this.val(type, !__isNull);
+        }
         if (this.isPrimitiveType(type) && this.isPrimitiveType(value.t)) {
             if (type.name === "bool") {
                 return this.val(type, value.v ? 1 : 0);

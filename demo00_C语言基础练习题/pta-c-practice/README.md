@@ -1,14 +1,13 @@
-# C语言刷题本 · 本地离线刷题集（38 题）
+# 编程刷题本 · 本地离线刷题集
 
 一个**纯本地、零安装、可整体拷贝**的刷题网站：把整个文件夹拷到 U 盘或任何电脑（Windows/Mac/Linux 均可），双击 `index.html` 就能在浏览器里做题、交代码、自动判题。
-共 38 题（编号 1 ~ 38），题面为本地学习改写版，原题作者信息随题保留；题号从 1 开始连续编号，便于后续扩展其他题目。
+支持 **C / C++ / Python** 三种语言，题库见站内列表页（编号从 1 连续递增，随版本增长，站内统计均按实际题数动态显示）；题面为本地学习改写版，原题作者信息随题保留。
 
 ## 如何打开
 
 1. 把整个 `pta-c-practice` 文件夹拷到目标电脑，双击 `index.html`（推荐最新版 Chrome / Edge）。
-2. **C / C++ 判题完全离线可用**：解释器引擎已内置在 `vendor/` 里，不联网、不装任何环境也能判题。
-3. **Python 判题**的运行时（Pyodide，约 16MB）首次使用时需联网从 CDN 下载一次，之后浏览器有缓存；加载有中文提示，失败不影响 C/C++。
-4. 不需要 Node、npm、数据库或任何服务器；做题进度与历史记录自动保存在浏览器 localStorage 中（key 前缀 `ctv1:`），**换电脑不跟随**（属正常现象）。
+2. **三语言判题全部离线可用**：C/C++ 解释器与 Python 运行时（Pyodide，含 wasm 与标准库）都已内置在 `vendor/`，不联网、不装任何环境也能判题（Python 引擎约 17MB，首次用到 Python 时页面自动加载，之后本会话内常驻）。
+3. 不需要 Node、npm、数据库或任何服务器；做题进度与历史记录自动保存在浏览器 localStorage 中（key 前缀 `ctv1:`），**换电脑不跟随**（属正常现象）。
 
 ## 恢复全新状态（清空做题记录）
 
@@ -34,7 +33,7 @@ Object.keys(localStorage).filter(k=>k.startsWith('ctv1:')).forEach(k=>localStora
 
 - **题库列表页**：力扣题库式布局——左侧栏（题目/进度菜单、做题进度卡、每日一题卡）、难度分类胶囊、实时搜索、难度/状态/标签/排序筛选、只看收藏；44px 斑马纹题目行带彩色难度文字与难度条形图，悬停浮现星标可收藏
 - **题库抽屉**：在题目详情页点左上角「题库」，从左侧滑出题库侧边栏（带遮罩，Esc / 点遮罩 / × 关闭），内含搜索与筛选，当前题高亮、已通过的题显示绿色 ✓，点题直接跳转并自动收起——不用整页来回跳
-- **题目详情页**：左侧题面（Markdown 渲染、示例、约束、可折叠提示/参考思路/参考代码），右侧代码编辑器 + 判题面板，左右栏可拖拽调宽、面板高度可拖拽；左栏可收起成竖条、编辑器可收起/全屏（Esc 退出），拖拽后的布局与收起状态刷新后保持；右栏顶部有可关闭的「本地判题」提示条
+- **题目详情页**：左侧题面（Markdown 渲染、示例、约束、可折叠提示/参考思路/参考代码），右侧代码编辑器 + 判题面板，左右栏可拖拽调宽、面板高度可拖拽（分隔条始终跟手）；左栏可收起成竖条、编辑器可收起/全屏（Esc 退出），拖拽后的布局与收起状态刷新后保持；右栏顶部有可关闭的「本地判题」提示条
 - **代码草稿自动保存**（与力扣一致）：编辑器内容实时存入本机浏览器，切换语言、切换题目、关闭页面后重开都恢复上次写到一半的代码（每种语言一份独立草稿）；底部状态行显示「已存储 hh:mm」与光标行列；「重置」按钮可回到初始模板；每次运行/提交的代码另存进「提交记录」历史
 - **力扣式测试面板**：底部「测试用例 / 测试结果 / 控制台」三个标签页；用例以 Case 1 / Case 2… 胶囊标签展示，可 × 删除、+ 添加自定义用例；输入/输出/预期结果均为灰色圆角块（悬停可复制）。判题后自动跳到测试结果：通过显示绿色「通过」+ 各 Case 绿 ✓，失败显示红色「解答错误」+ 红 ✗，可打开 **Diff** 逐字符对比（写错的字符标红、漏掉的字符在预期中标绿），并显示执行用时
 - **三种语言**：C / C++ / Python。代码框初始只有注释形式的任务说明（自动从题面提取输入/输出格式），**不含任何代码**，需要你自己写出完整程序
@@ -44,11 +43,26 @@ Object.keys(localStorage).filter(k=>k.startsWith('ctv1:')).forEach(k=>localStora
   - 「提交」= 示例 + 隐藏用例全部判题，全过记为已解决，否则记为尝试过
   - C / C++：完整程序（含头文件、main），标准输入 → 标准输出判定，行末多余空白不影响判题
   - Python：完整程序，用 `input()` 读入、`print()` 输出
-  - 每个用例限时（默认 3 秒；第 27 题「数素数」为 10 秒、第 12 题「水仙花数」为 6 秒），超时提示「超出时间限制」，页面全程不卡死（Python 的死循环同样会被 Worker 超时终止）
+  - 每个用例限时（默认 3 秒；个别大计算题放宽并已在题面标注），超时提示「超出时间限制」，页面全程不卡死（Python 的死循环同样会被 Worker 超时终止）
+  - 用例输入**结尾忘打换行也没关系**（判题前自动补齐），Windows 的 CRLF 换行也会自动归一
 - **参考代码**：每题提供 C / C++ / Python 三份完整参考答案（默认折叠，展开时以 CodeMirror 语法高亮只读展示，带语言色角标，可一键载入编辑器）
 - **进度页**：按难度统计 + 最近做题记录
 - **界面与主题**：卡片式下拉菜单（阴影、勾选标记、彩色圆点）、深浅双主题（编辑器随主题切换代码配色），刷新后保持；顶栏齿轮可打开**设置弹窗**（代码字号 / Tab 缩进宽度 / 自动换行），设置保存在本机
 - **快捷键**：`Ctrl+Enter` 运行代码（焦点不必在编辑器里）；`Esc` 退出编辑器全屏、关闭题库抽屉 / 弹窗；编辑器内 `Tab` 按设置的缩进宽度插入空格
+
+## 解释器能力（已大幅修补）
+
+C / C++ 判题使用浏览器内的 **JSCPP 解释器**（不是真正的编译器）。本项目对引擎做了一轮系统性修补（见 `tests/build-engine.js`），日常教学用到的绝大多数写法现在都能正确工作：
+
+- **scanf / printf 全家桶**：`%d %i %u %ld %lld %llu %hd %f %lf %c %s %x %o` 等长度修饰符组合均支持；`%d` 一律十进制（`08` 不再报错）、`%i` 自动识别进制；printf 的 `%ld/%lld/%lf` 也能正确输出
+- **字符串库 `<string.h>`**：`strlen strcpy strncpy strcat strncat strcmp strncmp strchr strrchr strstr strtok` 全部可用（原版多数因内部 bug 直接抛异常）；另新增 `memset memcpy memmove memcmp`（`memset(int数组, 0, sizeof(数组))` 这类写法按元素大小自动折算）
+- **数值语义**：负数整数除法按 C 语义向零取整（`-7/2 == -3`）；`cin >> double` 读负数不再丢符号；未初始化变量读到 0（与真实 C 常见表现一致），不再报"overflow of NaN"
+- **printf 细节**：`printf("a, b")` 的逗号后空格不再被吞；`printf("%s", p+2)` 等指针偏移正确生效；`puts` 自带换行
+- **混用**：`<iostream>` 与 `<cstdio>` 可以同时包含（`scanf` + `cout` 混用正常）
+- **指针**：`(char*)p` 强转、`while(p)` 指针真值判断、`NULL`/`EOF` 常量均可用
+- **I/O 可混用**：`<iostream>` 与 `<cstdio>` 可以同时包含，`scanf` / `getchar` / `cin` 按读取顺序连续消费同一份输入数据（不会各自从头重读）
+
+Python 判题使用 Pyodide（WASM 版 CPython 3.12），语法与标准 Python 一致，标准库可用，**完全离线**；`input()` 读入（数据不足时明确提示 EOFError）、`print()` 输出；死循环会被 Worker 超时终止（页面不卡死）。
 
 ## 文件结构
 
@@ -58,32 +72,38 @@ pta-c-practice/
 ├── css/style.css
 ├── vendor/             # 全部第三方库与判题引擎（离线可用）
 │   ├── *.js / *.css    #   CodeMirror（编辑器+material-darker 深色主题）、marked、DOMPurify
-│   ├── jscpp.es5.min.js / pyodide.js        # 引擎原始文件
-│   └── jscpp.engine.js / pyodide.engine.js  # 由 tests/gen-engines.js 生成的源码内嵌
+│   ├── jscpp.es5.min.js          # JSCPP 浏览器 bundle（由 tests/build-engine.js 打补丁+构建）
+│   ├── jscpp.engine.js           # 上一文件的内嵌字符串包装（生成物，勿手改）
+│   ├── pyodide.engine.js         # Pyodide 离线引擎（wasm+标准库内嵌，约 17MB，生成物，勿手改）
+│   └── python.min.js / clike.min.js / javascript.min.js  # 编辑器语法高亮
 ├── js/app.js           # 路由、页面渲染、交互
-├── js/questions.js     # 题库数据（38 题：题面、用例、C 参考答案、任务注释模板）
-├── js/solutions-extra.js # 38 题的 C++ 与 Python 参考答案
-├── js/judge.js         # 判题器（Web Worker、超时销毁重建、C/C++/Python 三引擎）
-├── js/storage.js       # 进度、历史记录保存（localStorage，key 前缀 ctv1:）
+├── js/questions.js     # 题库数据（题面、用例、C 参考答案、任务注释模板；加题即追加）
+├── js/solutions-extra.js # 各题的 C++ 与 Python 参考答案（键=题号）
+├── js/judge.js         # 判题器（Web Worker、超时销毁重建、C/C++/Python 三引擎、输入规范化）
+├── js/storage.js       # 进度、草稿、历史、收藏、设置（localStorage，key 前缀 ctv1:）
 ├── README.md
 └── tests/              # 开发辅助（整站运行不需要，拷贝给别人时可不带）
-    ├── verify.js       # 一键验证三语言全部参考答案与测试用例（需先 npm install JSCPP）
-    ├── gen-engines.js  # 重新生成 vendor/*_engine.js（升级引擎版本时用）
+    ├── verify.js       # 一键验证三语言全部参考答案与测试用例（优先用补丁版引擎）
+    ├── jscpp-limits.js # 解释器能力测试集（45 项，含历史缺陷回归）
+    ├── build-engine.js # JSCPP 补丁构建：engine-orig(原始) → engine-src(打补丁) → vendor bundle
+    ├── engine-orig/    # JSCPP 2.0.9 原始 lib（pristine 基线，勿手改）
+    ├── engine-patches/ # 引擎补丁源码（cstdio/cstring/iostream 整文件 + 说明见 build-engine.js）
+    ├── build-pyodide.js      # Pyodide 离线引擎构建（内嵌 wasm/标准库 + fetch 垫片）
+    ├── fetch-pyodide.js      # 下载 Pyodide 发行文件到 tests/pyodide-dist/
     ├── serve.js        # 可选：node serve.js 起本地服务（http://localhost:8123）
-    ├── renumber.js / de-wengkai.js  # 题目重新编号 / 题库整理辅助脚本（一次性使用）
-    ├── package.json    # npm 依赖声明（仅 verify.js 需要 JSCPP）
-    └── C_PAT-master/   # 交叉验证用参考代码来源之一（GitHub: shiping998/C_PAT）
+    ├── TEST-REPORT.md  # 测试报告
+    └── package.json    # npm 依赖（verify 用 JSCPP、构建用 esbuild）
 ```
+
+**改引擎后重新构建**：`node tests/build-engine.js`（幂等，重装 node_modules 后也先跑它）；`node tests/build-pyodide.js`（升级 Pyodide 版本时先跑 fetch-pyodide.js）。
 
 ## 如何自己加一道题
 
-打开 `js/questions.js`，往 `window.QUESTION_BANK` 数组里照抄一个对象并修改字段；若需要 C++/Python 参考答案，在 `js/solutions-extra.js` 的 `window.REFERENCE_EXTRA` 里按题号补一项。刷新页面立即生效。代码框的任务注释模板不用手写——会自动从题面的"输入格式/输出格式"段落生成。
-
-字段对照表：
+打开 `js/questions.js`，往 `window.QUESTION_BANK` 数组里照抄一个对象并修改字段（`id`/`code` 顺延编号即可，站内统计、列表、每日一题全部自动适配新数量）；若需要 C++/Python 参考答案，在 `js/solutions-extra.js` 的 `window.REFERENCE_EXTRA` 里按题号补一项。刷新页面立即生效。代码框的任务注释模板不用手写——会自动从题面的"输入格式/输出格式"段落生成。
 
 | 字段 | 作用 |
 |---|---|
-| id / code / slug / title | 内部编号、题号（如 1）、英文标识、标题 |
+| id / code / slug / title | 内部编号、题号（顺延）、英文标识、标题 |
 | difficulty | 难度：easy / medium / hard，决定颜色与筛选 |
 | score / author | 原题分值与作者（仅展示） |
 | timeLimit | 单用例限时（毫秒），省略则默认 3000 |
@@ -98,40 +118,36 @@ pta-c-practice/
 
 ## 已知限制（请先读再踩坑）
 
-**C / C++ 判题**使用浏览器内的 **JSCPP 解释器**（不是真正的编译器），只支持常用子集。参考答案刻意只用该子集：
+C / C++ 走的是**解释器**而非真编译器，修补后仍存在以下边界：
 
-1. **scanf 支持** `%d`、`%s`、`%f`（读 double/float 都用 `%f`）；**不支持** `%lf`、`%lld`、`%ld`、`%c`。cin/cout 可用。
-2. **`<iostream>` 与 scanf/printf 不要混用**：同一程序里同时包含 `<iostream>` 和 `<cstdio>` 会导致解释器内部崩溃——写 C++ 风格就全用 cin/cout，要用 scanf/printf 就只包含 `<cstdio>`。
-3. **不支持 `<string.h>` 函数**（strlen/strcpy/strstr 等与 `std::string`）与 **struct**；请用二维字符数组和手写循环。
-4. **`cin >> double` 读负数结果不可靠**（如第 37 题「平面向量加法」这类含负小数输入的题请用 `scanf("%f", ...)`）。
-5. **printf** 常规格式可用，但**紧跟逗号后的空格会被吞掉**（`"(%.1f, %.1f)"` 输出 `(-10.4,6.0)`）；也不要依赖 `printf("%s", 指针偏移)`（偏移被忽略）。
-6. **负数整数除法**按向负无穷取整（`-7/2` 得 `-4`，标准 C 是 `-3`）；`%` 行为与标准一致。`%.1f` 对正好落在 0.05 上的值舍入方向可能与真实编译器不同。
-7. **带符号溢出、读取未初始化变量**会直接报运行时错误；数组越界会报错。
-8. **性能**：解释执行比真实编译慢约千倍。第 12 题「水仙花数」内置测试仅覆盖 N ≤ 4；第 27 题「数素数」筛到 105000 约需 4~6 秒，该题限时已放宽到 10 秒。
+1. **struct / class 不支持**：文法层面结构体定义会被丢弃，声明即报 `type struct X is not defined`。需要组织数据时用平行数组或二维数组替代。这是剩余的最大缺口（修补需重写解析器，未做）。
+2. **性能**：解释执行比真实编译慢约千倍。内置测试用例已按此控制规模；自己出大计算量的题时记得用 `timeLimit` 字段放宽限时（第 12/27 题即示例）。
+3. **类型宽度是名义上的**：`long long` 按 JS Number 存储（安全整数 2^53 以内精确），`unsigned` 回绕/溢出检查为简化实现。教学题数据规模内无感。
+4. `%.1f` 对恰好落在 0.05 上的值，舍入方向可能与真实编译器相差一个方向（二进制浮点表示所致）。
+5. 数组严格越界检查仍在（越界报运行时错误）——这比真实 C 更严格，属保护性行为。
 
-**Python 判题**使用 Pyodide（WASM 版 CPython），语法与标准 Python 一致，标准库可用；仅注意：
-- **首次使用需要联网**下载运行时（pyodide.asm.wasm 等约 16MB，来自 jsDelivr CDN，之后浏览器有缓存）；完全断网时 C/C++ 不受影响，Python 会给出明确提示。
-- 死循环会被 Worker 超时终止（页面不卡死）。
-- 读入请用 `input()`（判题环境重写了它，数据不足时报 EOFError 提示），输出用 `print()`。
+Python 侧：wasm 与标准库已内置，完全离线；仅受浏览器内存限制，超大计算仍会受每题限时约束。
 
 **通用**：
-- 用 getchar / scanf / `input()` 读入的程序要求数据格式与题面完全一致（输入需以换行结尾）。
-- JavaScript 已不再作为判题语言提供。
+- 判题输入会自动补行尾换行、归一 CRLF；但数据格式（空格/逗号分隔等）仍需与题面一致。
+- 首次在 F12 控制台里可能看到一条 `Unsafe attempt to load URL` 提示：这是浏览器对 file:// 页面的内部 favicon 探测，无任何功能影响。
+- JavaScript 不作为判题语言提供。
 
 ## 常见问题
 
-- **拷到别的电脑能用吗？** 能。整个文件夹拷过去双击 `index.html` 即可；界面与 C/C++ 判题完全离线，只有 Python 首次使用需要联网下载运行时。
-- **页面排版异常或编辑器没高亮？** 检查 `vendor/` 文件夹是否和 `index.html` 一起拷过来了（所有界面库都在里面）。CodeMirror 缺失时编辑器自动降级为纯文本框，功能不受影响。
-- **提交后提示"解释器/运行时加载失败"？** C/C++ 引擎已内置一般不会出现；出现说明 `vendor/jscpp.engine.js` 没拷全，重新拷贝整个文件夹。Python 首次使用需联网下载运行时。
+- **拷到别的电脑能用吗？** 能。整个文件夹拷过去双击 `index.html` 即可；界面与三语言判题全部离线（Python 引擎文件较大，拷贝时确认 `vendor/pyodide.engine.js` 一并在）。
+- **页面排版异常或编辑器没高亮？** 检查 `vendor/` 文件夹是否和 `index.html` 一起拷全。CodeMirror 缺失时编辑器自动降级为纯文本框，功能不受影响。
+- **提交后提示"解释器加载失败"？** `vendor/jscpp.engine.js` 没拷全，重新拷贝整个文件夹。Python 提示初始化失败通常是浏览器内存不足，刷新重试。
 - **死循环会卡死页面吗？** 不会。判题在 Web Worker 中执行，超过题目限时即销毁该 Worker 并提示超出时间限制，随后的判题自动恢复正常（C/C++/Python 都如此）。
 - **换浏览器/清缓存后进度没了？** 进度、代码草稿、提交历史、收藏、界面设置都存在浏览器 localStorage 里（key 前缀 `ctv1:`），**不随文件夹拷贝**，换浏览器/换电脑即为全新状态，属正常现象；想一键清空恢复全新状态，见上文"**恢复全新状态（清空做题记录）**"一节。
 - **写了一半的代码切走会丢吗？** 不会。草稿实时自动保存（每种语言各一份），切语言、切题目、关页面后重开都会恢复上次内容；每次「运行 / 提交」的完整代码还另存进「提交记录」，可随时载回编辑器。想清掉某题草稿：打开该题点编辑器工具栏的「重置为初始模板」。
 - **编辑器/面板被我拖乱或收起了怎么办？** 收起按钮都在面板标题行上（编辑器 `⌃` 收起、全屏 `⛶`、左栏 `‹` 收起后左侧竖条 `›` 恢复）；布局会记住你的调整，想还原就清空浏览器存储（见"恢复全新状态"）。
-- **判题标准和真实 PTA 一样吗？** 输入输出格式一致，但判定做了宽松化：每行末尾空白与文末空行不影响判定；真实 PTA 的性能要求本站无法复现（见"性能"条）。
-- **不想拷 U 盘？** 可以把文件夹放进网盘/同步盘，或者在本机 `node tests/serve.js` 后局域网内其他电脑访问 `http://本机IP:8123`（Python 也无需再联网，本机有缓存即可）。
+- **判题标准和真实 OJ 一样吗？** 输入输出格式一致，判定做了宽松化：每行末尾空白与文末空行不影响判定；真实 OJ 的性能要求本站无法复现（见"性能"条）。
+- **不想拷 U 盘？** 可以把文件夹放进网盘/同步盘，或者在本机 `node tests/serve.js` 后局域网内其他电脑访问 `http://本机IP:8123`。
 
 ## 题目与答案的来源、验证方式
 
 - 题目清单与题面：对照公开习题资料（PTA/PAT 平台存档、公开题解）整理改写；每题至少含一个原题官方样例作为对答锚点。
-- 参考答案：C / C++ / Python 三份均逐题独立编写，由 `tests/verify.js` 对全部 167 个测试用例 × 3 种语言（共 501 次运行）实跑比对，当前**全部通过**；C/C++ 在 JSCPP 中执行，Python 在 CPython 3.11 下执行。
-- 运行 `node tests/verify.js` 可随时复验（需先在 `tests/` 目录 `npm install JSCPP`，Python 验证使用本机 python）。
+- 参考答案：C / C++ / Python 三份均逐题独立编写，由 `tests/verify.js` 对全部测试用例 × 3 种语言实跑比对（当前 501 次运行**全部通过**；C/C++ 在修补后的 JSCPP 中执行，Python 在 CPython 3.11 下执行）。
+- 解释器修补质量由 `tests/jscpp-limits.js`（45 项能力测试，覆盖历史缺陷回归）与 verify.js 共同把守。
+- 运行 `node tests/verify.js`、`node tests/jscpp-limits.js` 可随时复验（需先在 `tests/` 目录 `npm install`）。

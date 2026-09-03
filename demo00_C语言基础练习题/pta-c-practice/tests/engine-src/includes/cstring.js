@@ -108,45 +108,48 @@ module.exports = {
         }, "global", "strlen", [pchar], sizet);
 
         rt.regFunc(function (rt, _this, s1, s2) {
-            const a = _bufOf(rt, s1);
-            const b = _bufOf(rt, s2);
-            let i = a.p, j = b.p;
-            while (i < a.length && j < b.length && a[i].v !== 0 && b[j].v !== 0 && a[i].v === b[j].v) {
+            const x = _bufOf(rt, s1);
+            const y = _bufOf(rt, s2);
+            let i = x.p, j = y.p;
+            while (i < x.a.length && j < y.a.length && x.a[i].v !== 0 && y.a[j].v !== 0 && x.a[i].v === y.a[j].v) {
                 i++; j++;
             }
-            const ca = (i < a.length) ? a[i].v : 0;
-            const cb = (j < b.length) ? b[j].v : 0;
+            const ca = (i < x.a.length) ? x.a[i].v : 0;
+            const cb = (j < y.a.length) ? y.a[j].v : 0;
             const d = ca - cb;
             return rt.val(rt.intTypeLiteral, d < 0 ? -1 : (d > 0 ? 1 : 0));
         }, "global", "strcmp", [pchar, pchar], rt.intTypeLiteral);
 
         rt.regFunc(function (rt, _this, s1, s2, num) {
-            const a = _bufOf(rt, s1);
-            const b = _bufOf(rt, s2);
+            const x = _bufOf(rt, s1);
+            const y = _bufOf(rt, s2);
             let n = num.v;
-            let i = a.p, j = b.p;
-            while (n > 0 && i < a.length && j < b.length && a[i].v !== 0 && b[j].v !== 0 && a[i].v === b[j].v) {
+            let i = x.p, j = y.p;
+            while (n > 0 && i < x.a.length && j < y.a.length && x.a[i].v !== 0 && y.a[j].v !== 0 && x.a[i].v === y.a[j].v) {
                 i++; j++; n--;
             }
             if (n === 0) {
                 return rt.val(rt.intTypeLiteral, 0);
             }
-            const ca = (i < a.length) ? a[i].v : 0;
-            const cb = (j < b.length) ? b[j].v : 0;
+            const ca = (i < x.a.length) ? x.a[i].v : 0;
+            const cb = (j < y.a.length) ? y.a[j].v : 0;
             const d = ca - cb;
             return rt.val(rt.intTypeLiteral, d < 0 ? -1 : (d > 0 ? 1 : 0));
         }, "global", "strncmp", [pchar, pchar, sizet], rt.intTypeLiteral);
 
+        /* strchr/strrchr/strstr 返回带数组类型的指针值：JSCPP 的 isStringType 只认数组类型，
+         * 这样 printf("%s", p) 与 p-s 等用法都和 s+i 的行为一致 */
         rt.regFunc(function (rt, _this, str, ch) {
             const { a, p } = _bufOf(rt, str);
             let i = p;
             while (i < a.length && a[i].v !== 0 && a[i].v !== ch.v) {
                 i++;
             }
+            const arrType = rt.arrayPointerType(rt.charTypeLiteral, a.length);
             if (i < a.length && a[i].v === ch.v) {
-                return rt.val(pchar, rt.makeArrayPointerValue(a, i));
+                return rt.val(arrType, rt.makeArrayPointerValue(a, i));
             }
-            return rt.val(pchar, rt.nullPointerValue);
+            return rt.val(arrType, rt.nullPointerValue);
         }, "global", "strchr", [pchar, rt.charTypeLiteral], pchar);
 
         rt.regFunc(function (rt, _this, str, ch) {
@@ -159,34 +162,37 @@ module.exports = {
                 }
                 i++;
             }
+            const arrType = rt.arrayPointerType(rt.charTypeLiteral, a.length);
             if (lastpos >= 0) {
-                return rt.val(pchar, rt.makeArrayPointerValue(a, lastpos));
+                return rt.val(arrType, rt.makeArrayPointerValue(a, lastpos));
             }
-            return rt.val(pchar, rt.nullPointerValue);
+            return rt.val(arrType, rt.nullPointerValue);
         }, "global", "strrchr", [pchar, rt.charTypeLiteral], pchar);
 
         rt.regFunc(function (rt, _this, str1, str2) {
-            const a = _bufOf(rt, str1);
-            const b = _bufOf(rt, str2);
-            let i = a.p;
-            while (i < a.length && a[i].v !== 0) {
-                let j = b.p;
+            const x = _bufOf(rt, str1);
+            const y = _bufOf(rt, str2);
+            const arrType = rt.arrayPointerType(rt.charTypeLiteral, x.a.length);
+            let i = x.p;
+            while (i < x.a.length && x.a[i].v !== 0) {
+                let j = y.p;
                 let k = i;
-                while (k < a.length && j < b.length && b[j].v !== 0 && a[k].v === b[j].v) {
+                while (k < x.a.length && j < y.a.length && y.a[j].v !== 0 && x.a[k].v === y.a[j].v) {
                     k++; j++;
                 }
-                if (j < b.length + 1 && b[j] !== undefined && b[j].v === 0) {
-                    return rt.val(pchar, rt.makeArrayPointerValue(a, i));
+                if (j < y.a.length && y.a[j].v === 0) {
+                    return rt.val(arrType, rt.makeArrayPointerValue(x.a, i));
                 }
                 i++;
             }
-            return rt.val(pchar, rt.nullPointerValue);
+            return rt.val(arrType, rt.nullPointerValue);
         }, "global", "strstr", [pchar, pchar], pchar);
 
         /* strtok：状态保存在 rt 上（与 C 的跨调用静态状态一致） */
         rt.regFunc(function (rt, _this, str, delim) {
             const d = _bufOf(rt, delim);
             let s;
+            let nullType = pchar;
             if (str === null || str === undefined || str.v.target === rt.nullPointerValue || str.v.target === null) {
                 s = rt.__strtokState;
                 if (!s) {
@@ -202,9 +208,10 @@ module.exports = {
             while (i < s.a.length && s.a[i].v !== 0 && d.a.some(function (c) { return c.v === s.a[i].v; })) {
                 i++;
             }
+            const arrType = rt.arrayPointerType(rt.charTypeLiteral, s.a.length);
             if (i >= s.a.length || s.a[i].v === 0) {
                 rt.__strtokState = null;
-                return rt.val(pchar, rt.nullPointerValue);
+                return rt.val(arrType, rt.nullPointerValue);
             }
             const start = i;
             while (i < s.a.length && s.a[i].v !== 0 && !d.a.some(function (c) { return c.v === s.a[i].v; })) {
@@ -219,19 +226,11 @@ module.exports = {
                 next = null;
             }
             rt.__strtokState = next;
-            return rt.val(pchar, rt.makeArrayPointerValue(s.a, start));
+            return rt.val(arrType, rt.makeArrayPointerValue(s.a, start));
         }, "global", "strtok", [pchar, pchar], pchar);
 
-        /* memset / memcpy / memmove / memcmp：为所有数值元素类型注册重载；
-         * 数量参数按 C 语义解释为字节，内部折算成元素个数 */
-        const elemTypes = [
-            "char", "signed char", "unsigned char",
-            "short", "unsigned short",
-            "int", "unsigned int",
-            "long", "unsigned long",
-            "long long", "unsigned long long",
-            "float", "double"
-        ];
+        /* memset / memcpy / memmove / memcmp：单一 "?" 可变参注册（按元素类型注册多个重载会
+         * 触发 "ambiguous method invoking"）；数量参数按 C 语义解释为字节，内部折算成元素个数 */
         function _bytesOf(rt, t) {
             const lim = rt.config.limits[t.name];
             return (lim && lim.bytes) ? lim.bytes : 1;
@@ -249,40 +248,35 @@ module.exports = {
                     return { cells: [v.v.target], start: 0, eleType: v.t.targetType };
                 }
             }
-            rt.raiseException("memset/memcpy: argument is not a pointer");
+            rt.raiseException("mem function: argument is not a pointer");
         }
-        function _regMem(name, argTypes, fn) {
-            elemTypes.forEach(function (tn) {
-                const pt = rt.normalPointerType(rt.primitiveType(tn));
-                rt.regFunc(fn, "global", name, [pt].concat(argTypes.slice(1)), pt);
-            });
-        }
-        _regMem("memset", [pchar, rt.intTypeLiteral, sizet], function (rt, _this, dest, value, num) {
-            const t = _targetOf(rt, dest);
+        rt.regFunc(function (rt, _this, ...args) {
+            if (args.length !== 3) rt.raiseException("memset(dest, value, count) 需要 3 个参数");
+            const t = _targetOf(rt, args[0]);
             const per = _bytesOf(rt, t.eleType);
-            const count = Math.floor(num.v / per);
-            const v = rt.cast(t.eleType, value).v;
+            const count = Math.floor(args[2].v / per);
+            const v = rt.cast(t.eleType, args[1]).v;
             for (let i = 0; i < count && t.start + i < t.cells.length; i++) {
                 t.cells[t.start + i] = rt.val(t.eleType, v);
             }
-            return dest;
-        });
-        _regMem("memcpy", [pchar, pchar, sizet], function (rt, _this, dest, src, num) {
-            const d = _targetOf(rt, dest);
-            const s = _targetOf(rt, src);
-            const per = _bytesOf(rt, d.eleType);
-            const count = Math.floor(num.v / per);
+            return args[0];
+        }, "global", "memset", ["?"], pchar);
+        rt.regFunc(function (rt, _this, ...args) {
+            if (args.length !== 3) rt.raiseException("memcpy(dest, src, count) 需要 3 个参数");
+            const d = _targetOf(rt, args[0]);
+            const s = _targetOf(rt, args[1]);
+            const count = Math.floor(args[2].v / _bytesOf(rt, d.eleType));
             for (let i = 0; i < count && d.start + i < d.cells.length; i++) {
                 const sc = s.cells[s.start + i];
                 d.cells[d.start + i] = sc ? rt.clone(sc) : rt.val(d.eleType, 0);
             }
-            return dest;
-        });
-        _regMem("memmove", [pchar, pchar, sizet], function (rt, _this, dest, src, num) {
-            const d = _targetOf(rt, dest);
-            const s = _targetOf(rt, src);
-            const per = _bytesOf(rt, d.eleType);
-            const count = Math.floor(num.v / per);
+            return args[0];
+        }, "global", "memcpy", ["?"], pchar);
+        rt.regFunc(function (rt, _this, ...args) {
+            if (args.length !== 3) rt.raiseException("memmove(dest, src, count) 需要 3 个参数");
+            const d = _targetOf(rt, args[0]);
+            const s = _targetOf(rt, args[1]);
+            const count = Math.floor(args[2].v / _bytesOf(rt, d.eleType));
             const tmp = [];
             for (let i = 0; i < count; i++) {
                 const sc = s.cells[s.start + i];
@@ -291,13 +285,13 @@ module.exports = {
             for (let i = 0; i < count && d.start + i < d.cells.length; i++) {
                 d.cells[d.start + i] = tmp[i];
             }
-            return dest;
-        });
-        _regMem("memcmp", [pchar, pchar, sizet], function (rt, _this, s1, s2, num) {
-            const a = _targetOf(rt, s1);
-            const b = _targetOf(rt, s2);
-            const per = _bytesOf(rt, a.eleType);
-            const count = Math.floor(num.v / per);
+            return args[0];
+        }, "global", "memmove", ["?"], pchar);
+        rt.regFunc(function (rt, _this, ...args) {
+            if (args.length !== 3) rt.raiseException("memcmp(s1, s2, count) 需要 3 个参数");
+            const a = _targetOf(rt, args[0]);
+            const b = _targetOf(rt, args[1]);
+            const count = Math.floor(args[2].v / _bytesOf(rt, a.eleType));
             for (let i = 0; i < count; i++) {
                 const ca = a.cells[a.start + i] ? a.cells[a.start + i].v : 0;
                 const cb = b.cells[b.start + i] ? b.cells[b.start + i].v : 0;
@@ -306,7 +300,7 @@ module.exports = {
                 }
             }
             return rt.val(rt.intTypeLiteral, 0);
-        });
+        }, "global", "memcmp", ["?"], pchar);
     }
 };
 //# sourceMappingURL=cstring.js.map

@@ -1,4 +1,10 @@
 "use strict";
+/* 已废弃：JSCPP 引擎构建请用 build-engine.js（含解释器修补），Pyodide 离线引擎请用 build-pyodide.js。
+ * 本文件保留仅作历史参考；运行它会用未修补的原始引擎覆盖 vendor，请勿再执行。 */
+if (!process.env.FORCE_GEN_ENGINES) {
+    console.log("此脚本已废弃，请改用：node build-engine.js / node build-pyodide.js");
+    process.exit(0);
+}
 /* 生成引擎内嵌文件（一次性构建脚本）：
  *   vendor/jscpp.engine.js  → window.__ENGINE_SRC_JSCPP = "<JSCPP 完整源码字符串>"
  *   vendor/pyodide.engine.js → window.__ENGINE_SRC_PYODIDE = "<Pyodide 加载器源码字符串>"

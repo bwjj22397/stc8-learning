@@ -129,15 +129,31 @@ patchFile("rt.js", [
     [
         `        if (this.isStringType(element.t)) {\n            const { target } = element.v;\n            let result = "";\n            let i = 0;`,
         `        if (this.isStringType(element.t)) {\n            const { target } = element.v;\n            let result = "";\n            let i = element.v.position || 0;`
+    ],
+    /* 指针→bool：while(p)、if(p) 这类指针真值判断（strtok 循环等）原来直接抛 cast failed */
+    [
+        `        if (this.isTypeEqualTo(value.t, type)) {\n            return value;\n        }\n        if (this.isPrimitiveType(type) && this.isPrimitiveType(value.t)) {`,
+        `        if (this.isTypeEqualTo(value.t, type)) {\n            return value;\n        }\n        if (type.type === "primitive" && type.name === "bool" && value.t && this.isPointerType(value.t)) {\n            const __tgt = value.v.target;\n            const __isNull = (__tgt === null || __tgt === this.nullPointerValue);\n            return this.val(type, !__isNull);\n        }\n        if (this.isPrimitiveType(type) && this.isPrimitiveType(value.t)) {`
+    ]
+]);
+
+patchFile("interpreter.js", [
+    /* (char*)p 强转：原 TypeName 实现忽略指针部分，(char*)p 会按 char 处理报 cast failed */
+    [
+        `            TypeName(interp, s, param) {\n                ({\n                    rt\n                } = interp);\n                const typename = [];\n                for (const baseType of s.base) {\n                    if (baseType !== "const") {\n                        typename.push(baseType);\n                    }\n                }\n                return rt.simpleType(typename);\n            },`,
+        `            TypeName(interp, s, param) {\n                ({\n                    rt\n                } = interp);\n                const typename = [];\n                for (const baseType of s.base) {\n                    if (baseType !== "const") {\n                        typename.push(baseType);\n                    }\n                }\n                let __t = rt.simpleType(typename);\n                if (s.extra && s.extra.type === "AbstractDeclarator" && s.extra.Pointer && s.extra.Pointer.length > 0) {\n                    __t = interp.buildRecursivePointerType(s.extra.Pointer, __t, 0);\n                }\n                return __t;\n            },`
     ]
 ]);
 
 /* ---------- 4. esbuild 打包 ---------- */
 fs.writeFileSync(path.join(SRC, "entry.js"),
     `const JSCPP = require("./commonjs.js");\nwindow.JSCPP = JSCPP;\n`, "utf8");
-/* printf 包在浏览器用不到的 Stream 分支 require('stream')，用空壳替代 */
+/* printf 包在浏览器用不到的 Stream 分支 require('stream')，util.inspect 也只用于对象调试输出，
+ * 都用空壳替代 */
 fs.writeFileSync(path.join(SRC, "stub-stream.js"),
     `module.exports = { Stream: function Stream() {} };\n`, "utf8");
+fs.writeFileSync(path.join(SRC, "stub-util.js"),
+    `module.exports = { inspect: function (x) { return typeof x === "string" ? x : String(x); } };\n`, "utf8");
 
 let esbuild;
 try {
@@ -154,7 +170,7 @@ const bundle = esbuild.buildSync({
     format: "iife",
     platform: "browser",
     target: "es2018",
-    alias: { stream: path.join(SRC, "stub-stream.js") },
+    alias: { stream: path.join(SRC, "stub-stream.js"), util: path.join(SRC, "stub-util.js") },
     write: false
 });
 const outCode = bundle.outputFiles[0].text;

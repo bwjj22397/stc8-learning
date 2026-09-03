@@ -12,7 +12,15 @@ const fs = require("fs");
 const vm = require("vm");
 const path = require("path");
 const { spawnSync } = require("child_process");
-const JSCPP = require("JSCPP");
+/* 优先加载补丁版引擎（tests/build-engine.js 生成） */
+let JSCPP;
+try {
+  JSCPP = require("./engine-src/commonjs.js");
+  console.log("（使用补丁版引擎 tests/engine-src）");
+} catch (e) {
+  JSCPP = require("JSCPP");
+  console.log("（使用 node_modules 原始 JSCPP）");
+}
 
 /* ---------- 载入题库 ---------- */
 const root = path.join(__dirname, "..");

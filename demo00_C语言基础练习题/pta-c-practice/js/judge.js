@@ -50,8 +50,24 @@
     }
     var libCache = { jscpp: null, pyodide: null };   /* { url, indexURL, src } 会话内缓存 */
 
+    function injectScript(src) {
+        return new Promise(function (resolve, reject) {
+            var s = document.createElement('script');
+            s.src = src;
+            s.onload = function () { resolve(); };
+            s.onerror = function () { reject(new Error('无法加载 ' + src)); };
+            document.head.appendChild(s);
+        });
+    }
+
     function ensureLib(kind) {
         if (libCache[kind]) return Promise.resolve(libCache[kind]);
+        /* ⓪ Python 离线引擎约 17MB，首次用到时才动态加载（C/C++ 常驻） */
+        if (kind === 'pyodide' && !(window.__ENGINE_SRC_PYODIDE && window.__ENGINE_SRC_PYODIDE.length > 5000)) {
+            return injectScript('vendor/pyodide.engine.js').then(function () {
+                return ensureLib(kind);
+            });
+        }
         /* ① 页面已通过 <script> 内置引擎源码（首选，完全离线可用） */
         var embedded = (kind === 'jscpp') ? window.__ENGINE_SRC_JSCPP : window.__ENGINE_SRC_PYODIDE;
         if (embedded && embedded.length > 5000) {
@@ -268,7 +284,7 @@
             return '运行引擎源码下载失败（已尝试多个镜像），请检查网络后重试；若持续失败，可能是浏览器扩展拦截，可换浏览器或暂停扩展试试';
         }
         if (s === 'WORKER_ERROR' || s === 'LOAD_TIMEOUT') return '运行环境异常，请重试；若持续出现请刷新页面';
-        if (/^PYTHON_BOOT/.test(s)) return 'Python 运行时（Pyodide）初始化失败：' + s.slice(12) + '——请检查网络后重试';
+        if (/^PYTHON_BOOT/.test(s)) return 'Python 运行时（Pyodide）初始化失败：' + s.slice(12) + '——引擎已完整内置，通常是浏览器内存不足，请刷新页面重试';
         if (s.indexOf('BOOT_FAILED') === 0) return 'C/C++ 解释器初始化失败，请刷新页面重试';
         if (s === 'PYTHON_NOT_READY') return 'Python 运行时仍在加载中，请稍候几秒再试';
         if (/输入数据不足/.test(s)) return '输入数据不足：程序读取的内容超出了该用例提供的数据（EOFError）';
@@ -310,6 +326,14 @@
     }
     function compareOutput(actual, expected) {
         return normalizeOutput(actual) === normalizeOutput(expected);
+    }
+
+    /* 输入规范化：统一 \r\n → \n；结尾补换行。
+     * 真实 C 的 scanf/getchar 读到最后一个数据后不会因"没有换行"而报错，
+     * 而解释器的行读取依赖行尾换行，这里统一补齐，用户用例少打一个换行也不影响判题 */
+    function normalizeInput(s) {
+        s = String(s == null ? '' : s).replace(/\r\n?/g, '\n');
+        return (s.length && !s.endsWith('\n')) ? s + '\n' : s;
     }
 
     /* ---------- 执行单个用例 ---------- */
@@ -356,7 +380,7 @@
                         }
                     }
                 };
-                w.postMessage({ type: 'run', id: id, code: code, input: input });
+                w.postMessage({ type: 'run', id: id, code: code, input: normalizeInput(input) });
             });
         }, function (reason) {
             return Promise.resolve({

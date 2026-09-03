@@ -2,9 +2,12 @@
   "name": "tests",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "verify": "node verify.js",
+    "limits": "node jscpp-limits.js",
+    "build:engine": "node build-engine.js",
+    "build:pyodide": "node build-pyodide.js",
+    "fetch:pyodide": "node fetch-pyodide.js"
   },
   "keywords": [],
   "author": "",

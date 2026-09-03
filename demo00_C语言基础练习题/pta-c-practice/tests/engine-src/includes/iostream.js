@@ -25,11 +25,16 @@ const _read = function (rt, reg, buf, type) {
 module.exports = {
     load(rt) {
         const { stdio } = rt.config;
+        /* PATCH: 与 <cstdio> 共享同一份输入缓冲（rt.__stdinBox）——
+         * 混用 scanf 与 cin 读同一份数据时按读取顺序连续消费，不再各自从头重读 */
+        if (!rt.__stdinBox) {
+            rt.__stdinBox = { text: stdio.drain() };
+        }
         const cinType = rt.newClass("istream", []);
         const cin = {
             t: cinType,
             v: {
-                buf: stdio.drain(),
+                bufBox: rt.__stdinBox,
                 istream: stdio,
                 members: {}
             },
@@ -48,7 +53,7 @@ module.exports = {
                         if (!rt.isPrimitiveType(t.t)) {
                             rt.raiseException(">> operator in istream cannot accept " + rt.makeTypeString(t.t));
                         }
-                        let b = _cin.v.buf;
+                        let b = _cin.v.bufBox.text;
                         _cin.v.eofbit = b.length === 0;
                         let r;
                         let v;
@@ -104,7 +109,7 @@ module.exports = {
                         _cin.v.failbit = len === 0;
                         if (!_cin.v.failbit) {
                             t.v = rt.val(t.t, v).v;
-                            _cin.v.buf = b.substring(len);
+                            _cin.v.bufBox.text = b.substring(len);
                         }
                         return _cin;
                     }
@@ -115,12 +120,12 @@ module.exports = {
             if (!rt.isStringType(t.t)) {
                 rt.raiseException("only a pointer to string can be used as storage");
             }
-            let b = _cin.v.buf;
+            let b = _cin.v.bufBox.text;
             _cin.v.eofbit = b.length === 0;
             b = _skipSpace(b);
             const r = _read(rt, /^\S*/, b, t.t)[0];
             _cin.v.failbit = r.length === 0;
-            _cin.v.buf = b.substring(r.length);
+            _cin.v.bufBox.text = b.substring(r.length);
             const initialPos = t.v.position;
             const tar = t.v.target;
             if ((tar.length - initialPos) <= r.length) {
@@ -143,7 +148,7 @@ module.exports = {
                 String.fromCharCode(delimV.v)
                 :
                     '\n';
-            const b = _cin.v.buf;
+            const b = _cin.v.bufBox.text;
             _cin.v.eofbit = b.length === 0;
             let r = _read(rt, new RegExp(`^[^${delim}]*`), b, t.t)[0];
             if ((r.length + 1) > limit) {
@@ -156,7 +161,7 @@ module.exports = {
             else {
                 _cin.v.failbit = r.length === 0;
             }
-            _cin.v.buf = b.substring(r.length + (removeDelim ? 1 : 0));
+            _cin.v.bufBox.text = b.substring(r.length + (removeDelim ? 1 : 0));
             const initialPos = t.v.position;
             const tar = t.v.target;
             if ((tar.length - initialPos) <= r.length) {
@@ -171,14 +176,14 @@ module.exports = {
         rt.regFunc(_getline, cin.t, "getline", [pchar, rt.intTypeLiteral, rt.charTypeLiteral], cin.t);
         rt.regFunc(_getline, cin.t, "getline", [pchar, rt.intTypeLiteral], cin.t);
         const _get = function (rt, _cin) {
-            const b = _cin.v.buf;
+            const b = _cin.v.bufBox.text;
             _cin.v.eofbit = b.length === 0;
             if (_cin.v.eofbit) {
                 return rt.val(rt.intTypeLiteral, -1);
             }
             else {
                 const r = _read(rt, /^.|[\r\n]/, b, rt.charTypeLiteral);
-                _cin.v.buf = b.substring(r.length);
+                _cin.v.bufBox.text = b.substring(r.length);
                 const v = r[0].charCodeAt(0);
                 return rt.val(rt.intTypeLiteral, v);
             }

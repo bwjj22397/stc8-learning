@@ -77,6 +77,7 @@ body {
     line-height: 1.5;
 }
 body.dragging { user-select: none; cursor: col-resize; }
+body.dragging-v { user-select: none; cursor: row-resize; }
 body.drawer-open { overflow: hidden; }
 a { color: var(--link); text-decoration: none; transition: color 0.2s var(--ease); }
 a:hover { text-decoration: none; }

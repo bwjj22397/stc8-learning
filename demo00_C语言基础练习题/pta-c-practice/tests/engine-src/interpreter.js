@@ -764,7 +764,11 @@ class Interpreter extends BaseInterpreter {
                         typename.push(baseType);
                     }
                 }
-                return rt.simpleType(typename);
+                let __t = rt.simpleType(typename);
+                if (s.extra && s.extra.type === "AbstractDeclarator" && s.extra.Pointer && s.extra.Pointer.length > 0) {
+                    __t = interp.buildRecursivePointerType(s.extra.Pointer, __t, 0);
+                }
+                return __t;
             },
             *BinOpExpression(interp, s, param) {
                 ({

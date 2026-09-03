@@ -945,7 +945,7 @@
             var envBar = h('div', 'env-bar');
             envBar.innerHTML =
                 '<span class="env-bar-ic">ⓘ</span>' +
-                '<span>判题在<b>本地浏览器</b>完成：C / C++ 引擎已内置、完全离线；Python 运行时首次使用需联网下载（之后有缓存）。</span>';
+                '<span>判题在<b>本地浏览器</b>完成：C / C++ / Python 三种引擎已全部内置，完全离线可用。</span>';
             var envClose = h('button', 'icon-btn env-close', ic('x', 14));
             envClose.title = '不再显示';
             envClose.addEventListener('click', function () {
@@ -1669,19 +1669,31 @@
             if (editor._kind === 'cm') editor.refresh();
         });
 
-        /* 编辑器 / 测试结果 拖拽调高 */
+        /* 编辑器 / 测试结果 拖拽调高：以编辑器窗格实际几何为基准并保持鼠标相对偏移，
+         * 分隔条始终跟手（旧实现以上下两窗格外的整栏高度直接折算，一点击就瞬移） */
         var vDragging = false;
-        vDivider.addEventListener('mousedown', function (ev) { ev.preventDefault(); vDragging = true; document.body.classList.add('dragging'); });
+        var vDragOffset = 0;
+        vDivider.addEventListener('mousedown', function (ev) {
+            ev.preventDefault();
+            vDragging = true;
+            document.body.classList.add('dragging-v');
+            var rc = right.getBoundingClientRect();
+            lastVPct = Math.min(80, Math.max(20, (editorPane.getBoundingClientRect().height / rc.height) * 100));
+            var dRect = vDivider.getBoundingClientRect();
+            vDragOffset = ev.clientY - (dRect.top + dRect.height / 2);
+        });
         window.addEventListener('mousemove', function (ev) {
             if (!vDragging) return;
             var rc = right.getBoundingClientRect();
-            lastVPct = Math.min(80, Math.max(20, ((ev.clientY - rc.top) / rc.height) * 100));
+            var above = editorPane.offsetTop;   /* 编辑器窗格上方的固定占用（提示条 + 工具行） */
+            var want = ev.clientY - vDragOffset - rc.top - above;
+            lastVPct = Math.min(80, Math.max(20, (want / rc.height) * 100));
             applyVertical();
         });
         window.addEventListener('mouseup', function () {
             if (!vDragging) return;
             vDragging = false;
-            document.body.classList.remove('dragging');
+            document.body.classList.remove('dragging-v');
             saveLayout({ vpct: lastVPct });
             if (editor._kind === 'cm') editor.refresh();
         });

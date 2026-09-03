@@ -63,6 +63,10 @@ const cases = [
     { id: "printf %5.2f", lang: "c", code: '#include <stdio.h>\nint main(){printf("%5.2f",3.14159);return 0;}', input: "", want: " 3.14" },
     // ---------- 混用 iostream + cstdio ----------
     { id: "iostream+cstdio 混用", lang: "cpp", code: '#include <iostream>\n#include <cstdio>\nusing namespace std;\nint main(){int a;scanf("%d",&a);cout<<"ok "<<a;return 0;}', input: "7", want: "ok 7" },
+    { id: "混用连续读 scanf→cin", lang: "cpp", code: '#include <iostream>\n#include <cstdio>\nusing namespace std;\nint main(){int a,b;scanf("%d",&a);cin>>b;printf("%d %d",a,b);return 0;}', input: "3 7", want: "3 7" },
+    { id: "混用连续读 cin→scanf", lang: "cpp", code: '#include <iostream>\n#include <cstdio>\nusing namespace std;\nint main(){int a,b;cin>>a;scanf("%d",&b);printf("%d %d",a,b);return 0;}', input: "3 7", want: "3 7" },
+    { id: "混用 scanf→cin→scanf", lang: "cpp", code: '#include <iostream>\n#include <cstdio>\nusing namespace std;\nint main(){int a,b,c;scanf("%d",&a);cin>>b;scanf("%d",&c);printf("%d %d %d",a,b,c);return 0;}', input: "1 2 3", want: "1 2 3" },
+    { id: "混用 getchar→cin", lang: "cpp", code: '#include <iostream>\n#include <cstdio>\nusing namespace std;\nint main(){int c=getchar();int x;cin>>x;printf("%c %d",(char)c,x);return 0;}', input: "A 42\n", want: "A 42" },
     // ---------- string.h ----------
     { id: "strlen", lang: "c", code: '#include <stdio.h>\n#include <string.h>\nint main(){printf("%d",(int)strlen("hello"));return 0;}', input: "", want: "5" },
     { id: "strlen 变量", lang: "c", code: '#include <stdio.h>\n#include <string.h>\nint main(){char s[20]="abcd";printf("%d",(int)strlen(s));return 0;}', input: "", want: "4" },

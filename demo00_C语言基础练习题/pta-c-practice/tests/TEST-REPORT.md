@@ -1,12 +1,97 @@
-# C语言刷题本 · UI 重构回归测试报告
+# 编程刷题本 · 回归测试报告
 
-- **测试日期**：2026-09-02
-- **被测对象**：`D:\Edge\C语言基础练习离线网站附带GitHub使用指南\C语言基础练习题\pta-c-practice\`
-- **测试依据**：《力扣界面复刻需求说明.md》（2026-09-02 实测完整版）裁剪落地 + 自设计全量用例
+- **测试日期**：2026-09-02（两轮：UI 重构回归；「已知限制清零」专项）
+- **测试依据**：《力扣界面复刻需求说明.md》裁剪落地 + README「已知限制」清零要求 + 自设计全量用例
 - **测试环境**：Windows 11 · Microsoft Edge（file:// 直开，无服务器）· 2560×1600 视口
 - **测试方式**：
   1. `tests/verify.js` 全量回归（Node 22 + JSCPP + CPython 3.11）
-  2. 真机 Edge E2E：DevTools 控制台注入断言脚本（112 项）+ 界面截图目检
+  2. `tests/jscpp-limits.js` 解释器能力测试集（45 项）
+  3. 真机 Edge E2E：DevTools 控制台注入断言脚本（112 + 17 项）+ 界面截图目检
+
+---
+
+# 第二轮补充：「已知限制」复扫与最后一项可解决限制（2026-09-03）
+
+用户指示自主继续：若项目已完成则再测已知限制并解决。复扫 README「已知限制」清单，逐条评估可解决性：
+
+| 限制项 | 评估 | 结果 |
+|---|---|---|
+| C++ 混用 scanf/cin 重复读同一份数据 | **可解决**（两头文件各持独立输入缓冲副本） | ✅ 已解决 |
+| struct 不支持 | 文法级缺口，修补需重写 PEG 解析器；判错比报错危害更大 | 保留（唯一 C 侧缺口，已文档化替代写法） |
+| 性能千倍 / 类型宽度名义化 / %.1f 舍入方向 / 越界严格报错 | 解释器与浮点原理性边界 / 保护性行为 | 保留（客观说明） |
+
+**混用 I/O 修复**：cstdio 与 iostream 的输入缓冲统一挂到 `rt.__stdinBox` 共享对象，按读取顺序连续消费。新增 4 项混用测试（scanf→cin、cin→scanf、scanf→cin→scanf、getchar→cin）：
+
+- `tests/jscpp-limits.js`：**47/49 通过**（新增 4 项全 PASS，仅 struct×2 按设计失败）
+- `tests/verify.js`：501/501 继续全绿
+- 浏览器 E2E（bundle + Worker 路径）：第 5 题写入混用程序 `scanf("%d",&a); cin>>b; printf("%d %d",a,b)`，输入 `3 7`，结果面板输出 `3 7`（M1/M2 PASS）；测试后已清理第 5 题残留数据
+
+**使用文档同步**：README「已知限制」删除"别混用两种 I/O"注意事项，"解释器能力"章节新增「I/O 可混用」条目。
+
+---
+
+# 第二轮：「已知限制清零」专项（2026-09-02）
+
+## 需求与结论
+
+用户要求把使用文档「已知限制」里的限制**全部解决**。结论：**除 struct 外全部解决**，struct 为文法级缺口（解析器直接丢弃结构体定义），修补等于重写解析器，如实保留为文档中唯一剩余限制，并给出替代写法（平行数组）。同时完成改名（C语言刷题本 → **编程刷题本**）、去除全部固定题数表述（统计按 `QUESTION_BANK.length` 动态）、修复竖向分隔条点击瞬移。
+
+## 一、JSCPP 引擎修补（tests/build-engine.js + engine-patches/）
+
+方法：JSCPP npm 包自带未压缩 lib 源码 → 复制到 `tests/engine-src/` 打补丁 → esbuild 打包浏览器 bundle → 重生成 `vendor/jscpp.engine.js`。共 6 个文件 13 处补丁，全部可复现（幂等脚本）。
+
+`tests/jscpp-limits.js` 能力测试集（自设计 45 项）：
+
+| 轮次 | 结果 | 说明 |
+|---|---|---|
+| 修补前基线 | 18/45 | 复现全部历史缺陷 |
+| 修补后 | **43/45** | 仅 struct×2 按设计失败 |
+
+修补清单（全部验证通过）：
+- scanf：`%lf`（double）、`%lld/%lli`、`%hd`、`%i` 新支持；`%d/%u` 改为严格十进制（`08` 不再抛 invalid octal）；`%c` 正确写入字符变量（原实现报 Memory overflow/NaN）；格式前导空白按 C 语义匹配任意空白（`scanf(" %c")` 生效）；输入推进改用 match 下标（原 `indexOf(result)` 在重复子串时错位）；`%f` 支持 `.5/1e3/+3`
+- printf：`%ld/%lld/%lf` 长度修饰符（原报 insufficient arguments）；`"a, b"` 逗号后空格不再被吞（根因：预处理器把字符串字面量当宏参数表按逗号切分再无空格重组——launcher.js 里先掩蔽字符串/字符字面量再预处理、之后还原，同时屏蔽了注释干扰）；`%s` 指针偏移生效（rt.js getStringFromCharArray 尊重 position）；`puts` 补换行；`sprintf` 重写（原实现必报 not an array）
+- string.h：strlen/strcpy/strncpy/strcat/strncat/strcmp/strncmp/strchr/strrchr/strstr 全部修复或重写（原版 strcmp 越界读、strchr/strstr 注册签名错误、strncat 传指针给只收数组的内部函数等）；新增 `strtok`（NULL 续写语义）、`memset/memcpy/memmove/memcmp`（字节数按元素宽度折算，`memset(int数组,0,sizeof)` 可用；单一 "?" 注册避免重载二义）
+- 数值：负数整数除法向零取整（defaults.js `Math.floor` → `Math.trunc`）；`cin >> double/int` 正则重写（原 `^` 只锚定第一分支，`-5` 被读成 `5` 且负号残留缓冲）；未初始化变量默认值 NaN→0（rt.js defaultValue，"overflow of NaN" 不再出现）
+- 杂项：`<iostream>`+`<cstdio>` 混用（launcher drain 缓存，两个头文件共享同一份输入）；`(char*)p` 强转（interpreter TypeName 忽略指针部分 → buildRecursivePointerType）；`while(p)` 指针真值（rt.js cast 增加指针→bool）；`EOF`/`NULL` 常量注册；`_hex2int` 大写 A-F 修正
+
+回归：`tests/verify.js`（改用补丁版引擎）**501/501 全部通过**（C 167 + C++ 167 + Python 167），确认参考答案在修补后引擎下零回归。
+
+## 二、判题输入体验（js/judge.js）
+
+`normalizeInput`：用例输入 `\r\n`/`\r` → `\n`，结尾自动补换行。用户用例少打换行、从 Windows 编辑器粘贴带 CRLF 均不影响判题。
+
+## 三、Python 完全离线（tests/build-pyodide.js → vendor/pyodide.engine.js，17.2MB）
+
+- 下载 Pyodide v0.26.4 发行文件（tests/pyodide-dist/），构建自举源码：**fetch 垫片**对 `pyodide.asm.wasm / python_stdlib.zip / pyodide-lock.json` 用内嵌 base64/文本直接构造 Response，`__OFFLINE_ONLY=true` 时其余网络请求一律拒绝（保证可证明的零联网）；预 eval `pyodide.asm.js` 定义 `_createPyodideModule` 使 loadPyodide 跳过 importScripts。
+- `js/judge.js` 改为**懒加载**：index.html 不再常驻 17MB 脚本，首次切到 Python 时动态注入 `vendor/pyodide.engine.js`。
+- 真机验证：第 5 题 Python 参考答案运行，**懒加载 + 引擎启动 + 判题通过共 2.4 秒**，全程无任何"离线模式阻止"报错 → 证明零网络请求。
+
+## 四、改名与动态题数
+
+- 站名「C语言刷题本」→「**编程刷题本**」，副标题「本地离线刷题集 · C / C++ / Python」（index.html title/brand）。
+- 固定题数清零：grep 确认 UI 层无硬编码"38 题"；列表统计、抽屉计数、每日一题轮换、进度页全部基于 `QUESTION_BANK.length` 动态计算（断言 N1/N2/N4 PASS；N3 为断言误报——其命中的"38 题"来自动态统计行，数值=题库长度，属正确行为）。
+
+## 五、竖向分隔条拖拽体验（用户报告：一点击就瞬移）
+
+根因：旧实现以整个右栏高度直接折算百分比，未扣除提示条/工具行高度，首次 mousemove 即跳变。修复：以编辑器窗格实际几何为基准 + mousedown 记录鼠标与分隔条的相对偏移并在拖动中保持；`body.dragging-v` 光标 row-resize。
+
+验证（合成鼠标事件序列，宽视口）：
+```
+PASS D1 点击不瞬移（mousedown 后位移 0.0px）
+PASS D2 分隔条位移 == 鼠标位移 -80px（差 3.6px）
+PASS D3 分隔条位移 == 鼠标位移 +120px（差 3.6px）
+PASS D4 占比写入 localStorage
+```
+3.6px 为 8px 高分隔条边缘点击的固有偏移，感知即"跟手"。
+
+## 六、澄清的非问题
+
+1. file:// 首次打开时控制台的 `Unsafe attempt to load URL`：Chromium 对 file:// 页面的内部 favicon 探测（performance 面板证实无资源条目、无脚本发起），已在 README 常见问题中说明。
+2. 一轮"每日一题 26→27"差异：旧标签页跨 UTC 零点未刷新所致，重渲染后与 `floor(now/86400000)%38` 轮换公式一致（断言验证）。
+
+---
+
+# 第一轮：UI 重构回归（2026-09-02 上午）
 
 ---
 

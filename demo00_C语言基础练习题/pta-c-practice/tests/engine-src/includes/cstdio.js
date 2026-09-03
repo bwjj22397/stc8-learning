@@ -91,15 +91,19 @@ module.exports = {
     load(rt) {
         const char_pointer = rt.normalPointerType(rt.charTypeLiteral);
         const { stdio } = rt.config;
-        let input_stream = stdio.drain();
+        /* PATCH: 输入缓冲挂到 rt 上与 <iostream> 共享——混用 scanf 与 cin 读同一份数据
+         * 不会各自从头重读（原来两个头文件各持独立副本，第二个会从开头重复读） */
+        if (!rt.__stdinBox) {
+            rt.__stdinBox = { text: stdio.drain() };
+        }
         /* 注册 EOF / NULL（stdio.h 里的宏），getchar/文件读判末尾要用 */
         rt.scope[0].variables["EOF"] = rt.val(rt.intTypeLiteral, EOF);
         rt.scope[0].variables["NULL"] = rt.val(char_pointer, rt.nullPointerValue);
         const _consume_next_char = function () {
             let char_return = "";
-            if (input_stream.length > 0) {
-                char_return = input_stream[0];
-                input_stream = input_stream.substr(1);
+            if (rt.__stdinBox.text.length > 0) {
+                char_return = rt.__stdinBox.text[0];
+                rt.__stdinBox.text = rt.__stdinBox.text.substr(1);
                 return char_return;
             }
             else {
@@ -108,14 +112,14 @@ module.exports = {
         };
         const _consume_next_line = function () {
             let retval;
-            const next_line_break = input_stream.indexOf('\n');
+            const next_line_break = rt.__stdinBox.text.indexOf('\n');
             if (next_line_break > -1) {
-                retval = input_stream.substr(0, next_line_break);
-                input_stream = input_stream.replace(`${retval}\n`, '');
+                retval = rt.__stdinBox.text.substr(0, next_line_break);
+                rt.__stdinBox.text = rt.__stdinBox.text.replace(`${retval}\n`, '');
             }
             else {
-                retval = input_stream;
-                input_stream = "";
+                retval = rt.__stdinBox.text;
+                rt.__stdinBox.text = "";
             }
             return retval;
         };
@@ -124,7 +128,10 @@ module.exports = {
             if (rt.isStringType(format.t)) {
                 const formatStr = rt.getStringFromCharArray(format);
                 const parsed_params = validate_format(rt, formatStr, ...params);
-                const retval = printf(formatStr, ...parsed_params);
+                /* 底层 printf 包不认识 %ld/%lld/%lf 等长度修饰符（会原样输出），
+                 * 值在 JS 里本来就是 Number，先剥掉修饰符再交给它格式化 */
+                const plain = formatStr.replace(/%([-+ #0]*)([0-9]+|\*)?(\.(?:[0-9]+|\*))?(?:hh|h|ll|l|L|z|j|t)?/g, '%$1$2$3');
+                const retval = printf(plain, ...parsed_params);
                 return rt.makeCharArrayFromString(retval);
             }
             else {
@@ -324,7 +331,7 @@ module.exports = {
         }
         ;
         const _get_input = function (pre, next, match, type) {
-            let tmp = input_stream;
+            let tmp = rt.__stdinBox.text;
             let replace = `(${match})`;
             if ((type === 'STR') && (next.trim().length > 0)) {
                 const before_match = _regslashs(pre);
@@ -335,7 +342,10 @@ module.exports = {
                 tmp = tmp.replace(new RegExp(after_match), '');
             }
             else {
-                replace = _regslashs(pre) + replace;
+                /* C 语义：格式串里的空白匹配任意长度空白（含换行），
+                 * " %c" 是"跳过空白再读一个字符"，所以前导字面量中的空白折叠为 \s* */
+                const preRe = _regslashs(pre).replace(/\s+/g, '\\s*');
+                replace = preRe + replace;
             }
             const m = tmp.match(new RegExp(replace));
             if (!m) {
@@ -345,13 +355,13 @@ module.exports = {
             if (type !== 'STR') {
                 /* 非字符串模式：tmp 就是输入流本身，用匹配下标精确推进（原 indexOf 会在重复子串时错位） */
                 const idx = m.index + (m[0].length - result.length);
-                input_stream = input_stream.substr(idx + result.length);
+                rt.__stdinBox.text = rt.__stdinBox.text.substr(idx + result.length);
                 if (next) {
-                    input_stream = input_stream.replace(new RegExp('^' + _regslashs(next)), '');
+                    rt.__stdinBox.text = rt.__stdinBox.text.replace(new RegExp('^' + _regslashs(next)), '');
                 }
             }
             else {
-                input_stream = input_stream.substr(input_stream.indexOf(result)).replace(result, '').replace(next, '');
+                rt.__stdinBox.text = rt.__stdinBox.text.substr(rt.__stdinBox.text.indexOf(result)).replace(result, '').replace(next, '');
             }
             return result;
         };
@@ -549,14 +559,14 @@ module.exports = {
             let val;
             const format = rt.getStringFromCharArray(format_pointer);
             const original_string = rt.getStringFromCharArray(original_string_pointer);
-            const original_input_stream = input_stream;
-            input_stream = original_string;
+            const original_input_stream = rt.__stdinBox.text;
+            rt.__stdinBox.text = original_string;
             const matched_values = __scanf(format);
             for (let i = 0; i < matched_values.length; i++) {
                 val = matched_values[i];
                 _set_pointer_value(args[i], val);
             }
-            input_stream = original_input_stream;
+            rt.__stdinBox.text = original_input_stream;
             return rt.val(rt.intTypeLiteral, matched_values.length);
         };
         return rt.regFunc(_sscanf, "global", "sscanf", [char_pointer, char_pointer, "?"], rt.intTypeLiteral);
